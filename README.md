@@ -72,7 +72,8 @@ Every value below is in `DriveConstants` or `Constants.CAN`.
       `turnAbsolutePositionRad` must both increase together and agree within about 0.5 rad. If they
       diverge, check `turnMotorInverted`/`absoluteEncoderReversed` and press Start to re-seed.
 - [ ] Alerts: `turnEncoderSeeded` and `turnAbsoluteEncoderValid` must both be true on all four
-      modules before driving. A turn module with an unseeded encoder will not steer.
+      modules before driving. A turn module with an unseeded encoder will not steer. The drivetrain
+      refuses setpoints until all four modules report connected drive/turn and a seeded turn encoder.
 - [ ] Pigeon 2 orientation: the robot must be flat and still at startup. The Pigeon x-axis must
       point forward; verify the heading increases when the robot turns counter-clockwise.
 - [ ] Drive gains: `driveKp`, `driveKs`, and `driveKv` are starting values. Tune them, or run a

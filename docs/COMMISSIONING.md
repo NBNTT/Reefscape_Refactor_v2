@@ -40,7 +40,8 @@ For each module, turn the wheel by hand and watch
 Repeat for all four modules. Do not run all four until each module is correct.
 
 If any module alert appears while driving (disconnected motor, unseeded encoder, invalid absolute
-encoder), stop and fix it before continuing. A module with a bad turn encoder will not steer.
+encoder), stop and fix it before continuing. A module with a bad turn encoder will not steer, and
+the drivetrain refuses setpoints until every module is ready.
 
 ## 3b. Check geometry and Pigeon mount
 

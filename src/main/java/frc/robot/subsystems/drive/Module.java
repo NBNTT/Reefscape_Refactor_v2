@@ -67,6 +67,11 @@ public class Module {
     io.resetTurnEncoder();
   }
 
+  /** True when the module can safely accept drive and turn setpoints. */
+  public boolean isReady() {
+    return inputs.driveConnected && inputs.turnConnected && inputs.turnEncoderSeeded;
+  }
+
   public Rotation2d getAngle() {
     return inputs.turnPosition;
   }

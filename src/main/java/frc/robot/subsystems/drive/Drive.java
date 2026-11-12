@@ -39,6 +39,7 @@ public class Drive extends SubsystemBase {
   private final SwerveDriveKinematics kinematics = new SwerveDriveKinematics(moduleTranslations);
   private Rotation2d rawGyroRotation = Rotation2d.kZero;
   private boolean gyroWasConnected = false;
+  private boolean modulesReady = true;
   private SwerveModulePosition[] lastModulePositions = {
     new SwerveModulePosition(),
     new SwerveModulePosition(),
@@ -70,7 +71,12 @@ public class Drive extends SubsystemBase {
       module.periodic();
     }
 
-    if (DriverStation.isDisabled()) {
+    modulesReady = true;
+    for (Module module : modules) {
+      modulesReady &= module.isReady();
+    }
+
+    if (DriverStation.isDisabled() || !modulesReady) {
       for (Module module : modules) {
         module.stop();
       }
@@ -114,6 +120,9 @@ public class Drive extends SubsystemBase {
 
   /** Runs the drivetrain at the requested robot-relative velocity. */
   public void runVelocity(ChassisSpeeds speeds) {
+    if (!modulesReady) {
+      return;
+    }
     if (!Double.isFinite(speeds.vxMetersPerSecond)
         || !Double.isFinite(speeds.vyMetersPerSecond)
         || !Double.isFinite(speeds.omegaRadiansPerSecond)) {

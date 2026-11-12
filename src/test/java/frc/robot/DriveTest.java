@@ -79,6 +79,30 @@ class DriveTest {
   }
 
   @Test
+  void driveRecoversAfterXLock() {
+    DriverStationSim.setEnabled(true);
+    DriverStationSim.notifyNewData();
+
+    Drive drive = newSimDrive();
+    drive.stopWithX();
+    for (int i = 0; i < 50; i++) {
+      drive.periodic();
+    }
+
+    Pose2d before = drive.getPose();
+    drive.runVelocity(new ChassisSpeeds(1.0, 0.0, 0.0));
+    for (int i = 0; i < 50; i++) {
+      drive.periodic();
+    }
+
+    assertTrue(drive.getPose().getX() > before.getX() + 0.1, "robot should drive forward");
+    assertEquals(before.getY(), drive.getPose().getY(), 0.05);
+
+    DriverStationSim.setEnabled(false);
+    DriverStationSim.notifyNewData();
+  }
+
+  @Test
   void poseAndHeadingCanBeReset() {
     Drive drive = newSimDrive();
     drive.setPose(new Pose2d(1.0, 2.0, Rotation2d.fromDegrees(90.0)));

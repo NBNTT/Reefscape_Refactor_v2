@@ -36,8 +36,8 @@ The simulation uses `ModuleIOSim`, so you can drive it with a controller or run 
 without any hardware. Set `wpi.sim.addGui().defaultEnabled = true` in `build.gradle` if you want the
 Sim GUI window.
 
-Logs are written under `logs/`. Replay them with AdvantageScope, or set
-`Constants.simMode = Mode.REPLAY` and run `simulateJava`.
+Logs are written to the USB drive (`/U/logs`) on the robot and to `logs/` on the desktop. Replay
+them with AdvantageScope, or set `Constants.simMode = Mode.REPLAY` and run `simulateJava`.
 
 ## Controls
 

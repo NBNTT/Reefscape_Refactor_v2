@@ -9,6 +9,7 @@ class DriveCommandsTest {
   void deadbandZerosSmallInputs() {
     assertEquals(0.0, DriveCommands.applyDeadband(0.05, 0.1), 1e-9);
     assertEquals(0.0, DriveCommands.applyDeadband(-0.05, 0.1), 1e-9);
+    assertEquals(0.0, DriveCommands.applyDeadband(Double.NaN, 0.1), 1e-9);
   }
 
   @Test

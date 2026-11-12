@@ -21,6 +21,8 @@ public class Module {
 
   private final Alert driveDisconnectedAlert;
   private final Alert turnDisconnectedAlert;
+  private final Alert turnEncoderAlert;
+  private final Alert absoluteEncoderAlert;
 
   public Module(ModuleIO io, int index) {
     this.io = io;
@@ -29,6 +31,10 @@ public class Module {
         new Alert("Disconnected drive motor on module " + index + ".", AlertType.kError);
     turnDisconnectedAlert =
         new Alert("Disconnected turn motor on module " + index + ".", AlertType.kError);
+    turnEncoderAlert =
+        new Alert("Turn encoder not seeded on module " + index + ".", AlertType.kError);
+    absoluteEncoderAlert =
+        new Alert("Absolute encoder invalid on module " + index + ".", AlertType.kWarning);
   }
 
   public void periodic() {
@@ -36,6 +42,8 @@ public class Module {
     Logger.processInputs("Drive/Module" + index, inputs);
     driveDisconnectedAlert.set(!inputs.driveConnected);
     turnDisconnectedAlert.set(!inputs.turnConnected);
+    turnEncoderAlert.set(!inputs.turnEncoderSeeded);
+    absoluteEncoderAlert.set(!inputs.turnAbsoluteEncoderValid);
   }
 
   /** Runs the module at the requested state. The state is optimized and cosine-scaled. */

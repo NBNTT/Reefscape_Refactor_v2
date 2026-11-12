@@ -49,6 +49,12 @@ public class ModuleIOSpark implements ModuleIO {
   private final Debouncer driveConnectedDebounce = new Debouncer(0.5);
   private final Debouncer turnConnectedDebounce = new Debouncer(0.5);
 
+  private boolean driveConfigured = false;
+  private boolean turnConfigured = false;
+  private boolean turnSeeded = false;
+  private int turnDriftCounter = 0;
+  private int turnReseedCount = 0;
+
   public ModuleIOSpark(int module) {
     config = modules[module];
 
@@ -75,13 +81,14 @@ public class ModuleIOSpark implements ModuleIO {
         .closedLoop
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
         .pid(driveKp, 0.0, driveKd);
-    tryUntilOk(
-        driveSpark,
-        5,
-        () ->
-            driveSpark.configure(
-                driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
-    tryUntilOk(driveSpark, 5, () -> driveEncoder.setPosition(0.0));
+    driveConfigured =
+        tryUntilOk(
+            driveSpark,
+            5,
+            () ->
+                driveSpark.configure(
+                    driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
+    driveConfigured &= tryUntilOk(driveSpark, 5, () -> driveEncoder.setPosition(0.0));
 
     SparkMaxConfig turnConfig = new SparkMaxConfig();
     turnConfig
@@ -99,12 +106,13 @@ public class ModuleIOSpark implements ModuleIO {
         .positionWrappingEnabled(true)
         .positionWrappingInputRange(-Math.PI, Math.PI)
         .pid(turnKp, 0.0, turnKd);
-    tryUntilOk(
-        turnSpark,
-        5,
-        () ->
-            turnSpark.configure(
-                turnConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
+    turnConfigured =
+        tryUntilOk(
+            turnSpark,
+            5,
+            () ->
+                turnSpark.configure(
+                    turnConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
 
     resetTurnEncoder();
   }
@@ -119,7 +127,7 @@ public class ModuleIOSpark implements ModuleIO {
         new DoubleSupplier[] {driveSpark::getAppliedOutput, driveSpark::getBusVoltage},
         values -> inputs.driveAppliedVolts = values[0] * values[1]);
     ifOk(driveSpark, driveSpark::getOutputCurrent, value -> inputs.driveCurrentAmps = value);
-    inputs.driveConnected = driveConnectedDebounce.calculate(!sparkStickyFault);
+    inputs.driveConnected = driveConfigured && driveConnectedDebounce.calculate(!sparkStickyFault);
 
     sparkStickyFault = false;
     ifOk(turnSpark, turnEncoder::getPosition, value -> inputs.turnPosition = new Rotation2d(value));
@@ -129,14 +137,37 @@ public class ModuleIOSpark implements ModuleIO {
         new DoubleSupplier[] {turnSpark::getAppliedOutput, turnSpark::getBusVoltage},
         values -> inputs.turnAppliedVolts = values[0] * values[1]);
     ifOk(turnSpark, turnSpark::getOutputCurrent, value -> inputs.turnCurrentAmps = value);
-    inputs.turnConnected = turnConnectedDebounce.calculate(!sparkStickyFault);
+    inputs.turnConnected = turnConfigured && turnConnectedDebounce.calculate(!sparkStickyFault);
 
     inputs.turnAbsoluteVoltage = absoluteEncoder.getAverageVoltage();
     inputs.turnAbsolutePositionRad = getAbsoluteAngle().getRadians();
+    inputs.turnAbsoluteEncoderValid = absoluteEncoderValid();
+
+    if (!turnSeeded && inputs.turnAbsoluteEncoderValid) {
+      turnSeeded = resetTurnEncoderInternal();
+    }
+    if (turnSeeded && inputs.turnAbsoluteEncoderValid) {
+      double error =
+          MathUtil.angleModulus(inputs.turnPosition.getRadians() - inputs.turnAbsolutePositionRad);
+      if (Math.abs(error) > 0.5) {
+        if (++turnDriftCounter > 10) {
+          turnSeeded = resetTurnEncoderInternal();
+          turnDriftCounter = 0;
+          turnReseedCount++;
+        }
+      } else {
+        turnDriftCounter = 0;
+      }
+    }
+    inputs.turnEncoderSeeded = turnSeeded;
+    inputs.turnReseedCount = turnReseedCount;
   }
 
   @Override
   public void setDriveVelocity(double velocityMetersPerSec) {
+    if (!driveConfigured || !Double.isFinite(velocityMetersPerSec)) {
+      return;
+    }
     double ffVolts = driveKs * Math.signum(velocityMetersPerSec) + driveKv * velocityMetersPerSec;
     driveController.setReference(
         velocityMetersPerSec,
@@ -148,6 +179,12 @@ public class ModuleIOSpark implements ModuleIO {
 
   @Override
   public void setTurnPosition(Rotation2d rotation) {
+    if (!turnConfigured
+        || !turnSeeded
+        || rotation == null
+        || !Double.isFinite(rotation.getRadians())) {
+      return;
+    }
     double setpoint = MathUtil.inputModulus(rotation.getRadians(), -Math.PI, Math.PI);
     turnController.setReference(setpoint, ControlType.kPosition);
   }
@@ -164,7 +201,24 @@ public class ModuleIOSpark implements ModuleIO {
 
   @Override
   public void resetTurnEncoder() {
-    tryUntilOk(turnSpark, 5, () -> turnEncoder.setPosition(getAbsoluteAngle().getRadians()));
+    resetTurnEncoderInternal();
+  }
+
+  private boolean resetTurnEncoderInternal() {
+    if (!turnConfigured || !absoluteEncoderValid()) {
+      return false;
+    }
+    boolean ok =
+        tryUntilOk(turnSpark, 5, () -> turnEncoder.setPosition(getAbsoluteAngle().getRadians()));
+    if (ok) {
+      turnSeeded = true;
+    }
+    return ok;
+  }
+
+  private boolean absoluteEncoderValid() {
+    double voltage = absoluteEncoder.getAverageVoltage();
+    return voltage > 0.01 && voltage < 4.99;
   }
 
   private Rotation2d getAbsoluteAngle() {

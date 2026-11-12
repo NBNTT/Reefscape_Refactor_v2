@@ -15,6 +15,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.wpilibj.DriverStation;
 
 /** Pigeon 2 gyro implementation. */
 public class GyroIOPigeon2 implements GyroIO {
@@ -24,7 +25,7 @@ public class GyroIOPigeon2 implements GyroIO {
 
   public GyroIOPigeon2() {
     pigeon.getConfigurator().apply(new Pigeon2Configuration());
-    pigeon.getConfigurator().setYaw(0.0);
+    resetYaw();
     yaw.setUpdateFrequency(50.0);
     yawVelocity.setUpdateFrequency(50.0);
     pigeon.optimizeBusUtilization();
@@ -39,11 +40,21 @@ public class GyroIOPigeon2 implements GyroIO {
 
   @Override
   public void resetYaw() {
-    pigeon.setYaw(0.0);
+    applyYaw(0.0);
   }
 
   @Override
   public void setYaw(Rotation2d yaw) {
-    pigeon.setYaw(yaw.getDegrees());
+    applyYaw(yaw.getDegrees());
+  }
+
+  private void applyYaw(double degrees) {
+    StatusCode status = pigeon.setYaw(degrees);
+    for (int i = 0; i < 5 && status != StatusCode.OK; i++) {
+      status = pigeon.setYaw(degrees);
+    }
+    if (status != StatusCode.OK) {
+      DriverStation.reportWarning("Pigeon 2 setYaw failed; heading may be stale.", false);
+    }
   }
 }

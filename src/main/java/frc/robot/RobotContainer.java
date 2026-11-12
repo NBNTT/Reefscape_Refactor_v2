@@ -11,6 +11,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.Autos;
 import frc.robot.commands.DriveCommands;
@@ -92,10 +93,11 @@ public class RobotContainer {
   }
 
   private void configureBindings() {
-    driver.a().whileTrue(DriveCommands.lockWheels(drive));
-    driver.back().onTrue(Commands.runOnce(drive::zeroHeading).withName("Zero Heading"));
-    driver
-        .start()
+    Trigger teleop = new Trigger(DriverStation::isTeleopEnabled);
+    teleop.and(driver.a()).whileTrue(DriveCommands.lockWheels(drive));
+    teleop.and(driver.back()).onTrue(Commands.runOnce(drive::zeroHeading).withName("Zero Heading"));
+    teleop
+        .and(driver.start())
         .onTrue(Commands.runOnce(drive::resetTurnEncoders).withName("Reset Turn Encoders"));
   }
 

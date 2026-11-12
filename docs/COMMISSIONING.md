@@ -14,12 +14,19 @@ near the disable button.
 ## 2. Check absolute encoders
 
 For each module, turn the wheel by hand and watch
-`Drive/ModuleN/turnAbsolutePositionRad` in AdvantageScope.
+`Drive/ModuleN/turnAbsolutePositionRad` and `Drive/ModuleN/turnAbsoluteVoltage` in AdvantageScope.
 
 - The value must change smoothly and stay within -pi to pi.
-- Point the wheel forward. The value should be near 0 after the offset in `DriveConstants` is
-  correct. If it is not, adjust that module's `absoluteEncoderOffsetRad` by the error and rebuild.
-- If the value moves the wrong way, flip `absoluteEncoderReversed` for that module.
+- `Drive/ModuleN/turnAbsoluteEncoderValid` must be true. If it is false, the analog encoder is
+  unplugged or reading outside 0.01-4.99 V.
+- Point the wheel forward. `turnAbsolutePositionRad` should be near 0 after the offset in
+  `DriveConstants` is correct. If it is not, adjust that module's `absoluteEncoderOffsetRad` by the
+  error and rebuild.
+- `Drive/ModuleN/turnEncoderSeeded` must become true. If it does not, rotate the wheel slightly
+  off the 0 V point and press Start, or check the analog wiring.
+- Compare `turnPosition` (Spark MAX relative encoder) with `turnAbsolutePositionRad` over a full
+  revolution. They must move in the same direction and agree within about 0.5 rad. If they do not,
+  fix the inversion/offset before driving.
 
 ## 3. Check motor direction
 
@@ -31,6 +38,17 @@ For each module, turn the wheel by hand and watch
   above. If not, flip that module's `turnMotorInverted` (and re-check the turn encoder sign).
 
 Repeat for all four modules. Do not run all four until each module is correct.
+
+If any module alert appears while driving (disconnected motor, unseeded encoder, invalid absolute
+encoder), stop and fix it before continuing. A module with a bad turn encoder will not steer.
+
+## 3b. Check geometry and Pigeon mount
+
+- Measure the wheelbase and track width center-to-center. Update `wheelBase` and `trackWidth` in
+  `DriveConstants` if they are not 20.5 in.
+- Place the robot on a flat floor. The Pigeon 2 must be flat, with its x-axis pointing forward.
+- Rotate the robot counter-clockwise by hand. `Drive/Gyro/yawPosition` and `Drive/Pose` heading
+  must increase. If the heading decreases, the Pigeon is mounted upside down or rotated.
 
 ## 4. Check odometry
 
@@ -54,5 +72,5 @@ Repeat for all four modules. Do not run all four until each module is correct.
 - Confirm the battery is secure and the PDH breaker is on.
 - Confirm the radio and roboRIO are connected.
 - Confirm the driver controller is on port 0.
-- Press Back to zero the heading after placing the robot.
+- Press Back after placing the robot to set the alliance-forward heading.
 - Press Start only when the modules are free to rotate; it re-seeds the turn encoders.

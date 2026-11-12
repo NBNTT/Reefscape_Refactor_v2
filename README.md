@@ -33,8 +33,8 @@ Headless simulation:
 ```
 
 The simulation uses `ModuleIOSim`, so you can drive it with a controller or run a code auto
-without any hardware. Set `wpi.sim.addGui().defaultEnabled = true` in `build.gradle` if you want the
-Sim GUI window.
+(select "Drive Forward" in the dashboard chooser) without any hardware. Set
+`wpi.sim.addGui().defaultEnabled = true` in `build.gradle` if you want the Sim GUI window.
 
 Logs are written to the USB drive (`/U/logs`) on the robot and to `logs/` on the desktop. Replay
 them with AdvantageScope, or set `Constants.simMode = Mode.REPLAY` and run `simulateJava`.
@@ -43,11 +43,11 @@ them with AdvantageScope, or set `Constants.simMode = Mode.REPLAY` and run `simu
 
 | Input | Action |
 | --- | --- |
-| Left stick | Field-relative translation |
+| Left stick | Field-relative translation (forward is away from your alliance wall after Back) |
 | Right stick X | Rotation |
 | Right bumper (hold) | Slow mode (30%) |
 | A (hold) | X-lock wheels |
-| Back | Zero heading (keep position) |
+| Back | Zero heading for the current alliance (keep position) |
 | Start | Re-seed turn encoders from the analog absolute encoders |
 
 ## Before the first drive: commissioning checklist
@@ -61,14 +61,20 @@ Every value below is in `DriveConstants` or `Constants.CAN`.
 - [ ] Gear ratio: 5.9:1 drive, 18.75:1 steering (MK4n L2+ with 16T pinions). If the modules are a
       different MK4n level, change `driveMotorReduction`.
 - [ ] Wheel diameter: 3.75 in. Measure the actual wheels.
+- [ ] Geometry: wheelbase and track width are 20.5 in. Measure center-to-center and update
+      `wheelBase`/`trackWidth` if they differ.
 - [ ] Module zero offsets: currently `-6.903, -1.909, 3.035, 0.526` rad. Re-measure if a module was
-      rebuilt. Point all four wheels forward and adjust each offset until the reported angle is 0.
+      rebuilt. Point all four wheels forward and adjust each offset until
+      `Drive/ModuleN/turnAbsolutePositionRad` is near 0.
 - [ ] Motor inversion: all drive and turn motors are currently inverted. If a module drives the
       wrong way, flip that module's `driveMotorInverted` or `turnMotorInverted`.
-- [ ] Turn encoder direction: if a module's reported angle decreases when it should increase, flip
-      that module's `absoluteEncoderReversed`.
-- [ ] Pigeon 2 orientation: the robot must be flat and still at startup. The yaw is zeroed in the
-      constructor.
+- [ ] Turn encoder: turn each wheel by hand. `Drive/ModuleN/turnPosition` and
+      `turnAbsolutePositionRad` must both increase together and agree within about 0.5 rad. If they
+      diverge, check `turnMotorInverted`/`absoluteEncoderReversed` and press Start to re-seed.
+- [ ] Alerts: `turnEncoderSeeded` and `turnAbsoluteEncoderValid` must both be true on all four
+      modules before driving. A turn module with an unseeded encoder will not steer.
+- [ ] Pigeon 2 orientation: the robot must be flat and still at startup. The Pigeon x-axis must
+      point forward; verify the heading increases when the robot turns counter-clockwise.
 - [ ] Drive gains: `driveKp`, `driveKs`, and `driveKv` are starting values. Tune them, or run a
       velocity sweep, before trusting high-speed tracking.
 - [ ] Turn gains: `turnKp` starts at 0.25. Increase it if the modules are sluggish; lower it if they
@@ -85,7 +91,8 @@ superstructure; this project is the clean drivetrain base for the next robot.
 Vision is disabled by default because the stripped robot has no cameras. Set
 `VisionConstants.enabled = true` and update the camera names and `robotToCamera` transforms when
 cameras are mounted. The existing transforms are from the old superstructure and must be
-re-measured.
+re-measured. Vision runs on the real robot only; the simulator has no camera model. PhotonLib is
+pinned to a 2025 release candidate; switch to a stable 2025 build before enabling vision.
 
 ## Development environment on this machine
 

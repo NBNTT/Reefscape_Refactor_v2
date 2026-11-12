@@ -25,6 +25,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.util.AllianceFlipUtil;
 import org.littletonrobotics.junction.Logger;
 
 /** Four-module swerve drivetrain with odometry and AdvantageKit logging. */
@@ -101,6 +102,11 @@ public class Drive extends SubsystemBase {
 
   /** Runs the drivetrain at the requested robot-relative velocity. */
   public void runVelocity(ChassisSpeeds speeds) {
+    if (!Double.isFinite(speeds.vxMetersPerSecond)
+        || !Double.isFinite(speeds.vyMetersPerSecond)
+        || !Double.isFinite(speeds.omegaRadiansPerSecond)) {
+      return;
+    }
     ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
     SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
     SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, maxSpeedMetersPerSec);
@@ -171,15 +177,28 @@ public class Drive extends SubsystemBase {
     poseEstimator.resetPosition(rawGyroRotation, lastModulePositions, pose);
   }
 
-  /** Resets the current heading to zero, keeping the current translation. */
+  /** Resets the current heading to the alliance-forward direction, keeping the translation. */
   public void zeroHeading() {
-    setPose(new Pose2d(getPose().getTranslation(), Rotation2d.kZero));
+    setPose(
+        new Pose2d(
+            getPose().getTranslation(),
+            AllianceFlipUtil.shouldFlip() ? Rotation2d.kPi : Rotation2d.kZero));
   }
 
   public void addVisionMeasurement(
       Pose2d visionRobotPoseMeters,
       double timestampSeconds,
       Matrix<N3, N1> visionMeasurementStdDevs) {
+    double now = Timer.getFPGATimestamp();
+    if (visionRobotPoseMeters == null
+        || !Double.isFinite(visionRobotPoseMeters.getX())
+        || !Double.isFinite(visionRobotPoseMeters.getY())
+        || !Double.isFinite(visionRobotPoseMeters.getRotation().getRadians())
+        || !Double.isFinite(timestampSeconds)
+        || timestampSeconds > now + 0.1
+        || timestampSeconds < now - 2.0) {
+      return;
+    }
     poseEstimator.addVisionMeasurement(
         visionRobotPoseMeters, timestampSeconds, visionMeasurementStdDevs);
   }

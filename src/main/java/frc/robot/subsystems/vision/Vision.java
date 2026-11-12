@@ -64,7 +64,7 @@ public class Vision extends SubsystemBase {
           continue;
         }
 
-        int tagCount = result.getTargets().size();
+        int tagCount = estimated.get().targetsUsed.size();
         drive.addVisionMeasurement(
             estimated.get().estimatedPose.toPose2d(),
             estimated.get().timestampSeconds,

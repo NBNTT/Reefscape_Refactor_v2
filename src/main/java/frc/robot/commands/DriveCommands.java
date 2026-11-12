@@ -52,7 +52,8 @@ public final class DriveCommands {
                   ChassisSpeeds.fromFieldRelativeSpeeds(
                       xSpeed, ySpeed, omegaSpeed, drive.getRotation()));
             })
-        .withName("Joystick Drive");
+        .withName("Joystick Drive")
+        .finallyDo(drive::stop);
   }
 
   /** Holds the modules in an X pattern. */
@@ -61,6 +62,9 @@ public final class DriveCommands {
   }
 
   static double applyDeadband(double value, double deadband) {
+    if (!Double.isFinite(value)) {
+      return 0.0;
+    }
     if (Math.abs(value) < deadband) {
       return 0.0;
     }

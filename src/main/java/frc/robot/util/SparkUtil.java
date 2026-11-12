@@ -45,12 +45,14 @@ public final class SparkUtil {
   }
 
   /** Retries a configuration command until it succeeds or the attempt limit is reached. */
-  public static void tryUntilOk(SparkBase spark, int maxAttempts, Supplier<REVLibError> command) {
+  public static boolean tryUntilOk(
+      SparkBase spark, int maxAttempts, Supplier<REVLibError> command) {
     for (int i = 0; i < maxAttempts; i++) {
       if (command.get() == REVLibError.kOk) {
-        return;
+        return true;
       }
     }
     sparkStickyFault = true;
+    return false;
   }
 }

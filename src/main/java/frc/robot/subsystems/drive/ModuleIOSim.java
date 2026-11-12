@@ -69,6 +69,9 @@ public class ModuleIOSim implements ModuleIO {
     inputs.turnConnected = true;
     inputs.turnPosition = new Rotation2d(MathUtil.angleModulus(turnSim.getAngularPositionRad()));
     inputs.turnAbsolutePositionRad = inputs.turnPosition.getRadians();
+    inputs.turnAbsoluteEncoderValid = true;
+    inputs.turnEncoderSeeded = true;
+    inputs.turnReseedCount = 0;
     inputs.turnAbsoluteVoltage =
         MathUtil.inputModulus(inputs.turnAbsolutePositionRad, 0.0, 2.0 * Math.PI)
             / (2.0 * Math.PI)

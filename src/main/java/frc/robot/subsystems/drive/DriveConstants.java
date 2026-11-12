@@ -21,7 +21,7 @@ import frc.robot.Constants;
 public final class DriveConstants {
   private DriveConstants() {}
 
-  /** Free speed is about 4.8 m/s; 4.5 leaves a little headroom for control. */
+  /** Free speed is about 4.8 m/s. 4.5 is near the top; lower it if acceleration is poor. */
   public static final double maxSpeedMetersPerSec = 4.5;
 
   public static final double maxAngularSpeedRadPerSec = 3.0 * Math.PI;
@@ -41,7 +41,7 @@ public final class DriveConstants {
   // SDS MK4n with NEO motors.
   public static final double wheelRadiusMeters = Units.inchesToMeters(3.75) / 2.0;
 
-  /** Motor rotations per wheel rotation. MK4n L2. */
+  /** Motor rotations per wheel rotation. MK4n L2+. */
   public static final double driveMotorReduction = 5.9;
 
   /** Motor rotations per module rotation. MK4n uses 16T steering pinions (18.75:1). */

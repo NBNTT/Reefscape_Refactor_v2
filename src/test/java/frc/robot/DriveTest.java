@@ -4,12 +4,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import edu.wpi.first.hal.HAL;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
+import frc.robot.subsystems.drive.GyroIO.GyroIOInputs;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -27,6 +30,29 @@ class DriveTest {
         new ModuleIOSim(),
         new ModuleIOSim(),
         new ModuleIOSim());
+  }
+
+  private static final class FixedGyro implements GyroIO {
+    private final Rotation2d yaw = Rotation2d.fromDegrees(90.0);
+
+    @Override
+    public void updateInputs(GyroIOInputs inputs) {
+      inputs.connected = true;
+      inputs.yawPosition = yaw;
+    }
+  }
+
+  @Test
+  void usesConnectedGyroHeading() {
+    Drive drive =
+        new Drive(
+            new FixedGyro(),
+            new ModuleIOSim(),
+            new ModuleIOSim(),
+            new ModuleIOSim(),
+            new ModuleIOSim());
+    drive.periodic();
+    assertEquals(90.0, drive.getRotation().getDegrees(), 1e-6);
   }
 
   @Test
@@ -100,6 +126,19 @@ class DriveTest {
 
     DriverStationSim.setEnabled(false);
     DriverStationSim.notifyNewData();
+  }
+
+  @Test
+  void rejectsNonFiniteVisionMeasurement() {
+    Drive drive = newSimDrive();
+    drive.setPose(new Pose2d(1.0, 2.0, Rotation2d.kZero));
+
+    drive.addVisionMeasurement(
+        new Pose2d(Double.NaN, 2.0, Rotation2d.kZero),
+        Timer.getFPGATimestamp(),
+        VecBuilder.fill(0.1, 0.1, 0.1));
+
+    assertEquals(1.0, drive.getPose().getX(), 1e-9);
   }
 
   @Test

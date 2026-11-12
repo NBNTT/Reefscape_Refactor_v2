@@ -38,6 +38,7 @@ public class Drive extends SubsystemBase {
 
   private final SwerveDriveKinematics kinematics = new SwerveDriveKinematics(moduleTranslations);
   private Rotation2d rawGyroRotation = Rotation2d.kZero;
+  private boolean gyroWasConnected = false;
   private SwerveModulePosition[] lastModulePositions = {
     new SwerveModulePosition(),
     new SwerveModulePosition(),
@@ -84,6 +85,17 @@ public class Drive extends SubsystemBase {
               modulePositions[i].angle);
       lastModulePositions[i] = modulePositions[i];
     }
+
+    if (gyroInputs.connected && !gyroWasConnected) {
+      // The heading was integrated from module deltas while the gyro was gone. Re-anchor the
+      // estimator to the gyro so reconnecting does not feed it a large jump.
+      rawGyroRotation = gyroInputs.yawPosition;
+      poseEstimator.resetPosition(
+          rawGyroRotation,
+          getModulePositions(),
+          new Pose2d(getPose().getTranslation(), rawGyroRotation));
+    }
+    gyroWasConnected = gyroInputs.connected;
 
     if (gyroInputs.connected) {
       rawGyroRotation = gyroInputs.yawPosition;

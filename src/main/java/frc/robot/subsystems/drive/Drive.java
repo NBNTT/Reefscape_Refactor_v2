@@ -105,6 +105,7 @@ public class Drive extends SubsystemBase {
     if (!Double.isFinite(speeds.vxMetersPerSecond)
         || !Double.isFinite(speeds.vyMetersPerSecond)
         || !Double.isFinite(speeds.omegaRadiansPerSecond)) {
+      stop();
       return;
     }
     ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);

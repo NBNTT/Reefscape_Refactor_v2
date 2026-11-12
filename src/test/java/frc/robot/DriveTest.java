@@ -49,6 +49,36 @@ class DriveTest {
   }
 
   @Test
+  void xLockTurnsModulesToCross() {
+    DriverStationSim.setEnabled(true);
+    DriverStationSim.notifyNewData();
+
+    Drive drive = newSimDrive();
+    drive.runVelocity(new ChassisSpeeds(1.0, 0.0, 0.0));
+    for (int i = 0; i < 25; i++) {
+      drive.periodic();
+    }
+
+    drive.stopWithX();
+    for (int i = 0; i < 100; i++) {
+      drive.periodic();
+    }
+
+    double[] expectedDegrees = {45.0, -45.0, 135.0, -135.0};
+    for (int i = 0; i < 4; i++) {
+      // A wheel is symmetric, so 135 degrees and -45 degrees are the same X-lock angle.
+      assertEquals(
+          Math.IEEEremainder(expectedDegrees[i], 180.0),
+          Math.IEEEremainder(drive.getModuleStates()[i].angle.getDegrees(), 180.0),
+          8.0,
+          "module " + i + " should be at its X angle");
+    }
+
+    DriverStationSim.setEnabled(false);
+    DriverStationSim.notifyNewData();
+  }
+
+  @Test
   void poseAndHeadingCanBeReset() {
     Drive drive = newSimDrive();
     drive.setPose(new Pose2d(1.0, 2.0, Rotation2d.fromDegrees(90.0)));

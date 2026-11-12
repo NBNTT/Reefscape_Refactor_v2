@@ -52,6 +52,8 @@ Logs are written under `logs/`. Replay them with AdvantageScope, or set
 
 ## Before the first drive: commissioning checklist
 
+See [`docs/COMMISSIONING.md`](docs/COMMISSIONING.md) for the full step-by-step procedure.
+
 Every value below is in `DriveConstants` or `Constants.CAN`.
 
 - [ ] CAN IDs: FL 10/20, FR 11/21, BL 12/22, BR 13/23, Pigeon 31, PDH 1.
@@ -84,3 +86,17 @@ Vision is disabled by default because the stripped robot has no cameras. Set
 `VisionConstants.enabled = true` and update the camera names and `robotToCamera` transforms when
 cameras are mounted. The existing transforms are from the old superstructure and must be
 re-measured.
+
+## Development environment on this machine
+
+- JDK 17: `C:\Program Files\Eclipse Adoptium\jdk-17.0.21.9-hotspot`
+- Gradle 8.11 via `gradlew.bat` (cached locally)
+- AdvantageScope, Elastic, Glass, SysId, DataLogTool, OutlineViewer: shortcuts in
+  `Desktop\2025 WPILib Tools`
+- REV Hardware Client and Phoenix Tuner X are installed for device configuration
+- The full WPILib ISO was not installed. Gradle downloads the WPILib Java libraries, and the
+  individual desktop tools above were installed from the WPILib Maven repository.
+- FRC Game Tools / Driver Station are not installed. Install them from NI when you need to deploy to
+  the roboRIO or use the real Driver Station.
+- PathPlanner is not included: its 2025 Maven artifacts are no longer published. The drivetrain is
+  ready for code-based autos; add the 2026 PathPlanner library if you upgrade the project to 2026.

@@ -1,0 +1,58 @@
+# Drivetrain Commissioning
+
+Do this with the robot on blocks, wheels off the ground, and the battery connected. Keep one hand
+near the disable button.
+
+## 1. Check devices
+
+- REV Hardware Client: all eight Spark MAXes appear with the expected IDs and firmware.
+- Phoenix Tuner X: Pigeon 2 appears on CAN 31 and reports a stable yaw.
+- REV Hardware Client: PDH appears on CAN 1.
+- Glass or AdvantageScope: connect to NetworkTables and confirm `Drive/Module0` through
+  `Drive/Module3` are publishing.
+
+## 2. Check absolute encoders
+
+For each module, turn the wheel by hand and watch
+`Drive/ModuleN/turnAbsolutePositionRad` in AdvantageScope.
+
+- The value must change smoothly and stay within -pi to pi.
+- Point the wheel forward. The value should be near 0 after the offset in `DriveConstants` is
+  correct. If it is not, adjust that module's `absoluteEncoderOffsetRad` by the error and rebuild.
+- If the value moves the wrong way, flip `absoluteEncoderReversed` for that module.
+
+## 3. Check motor direction
+
+- Disable the robot. Spin one drive wheel forward by hand and confirm
+  `Drive/ModuleN/driveVelocityMetersPerSec` is positive.
+- Enable test mode or use REV Hardware Client to run one drive motor slowly forward. The wheel must
+  move the robot forward, not backward.
+- Run one turn motor slowly positive. The module must rotate counter-clockwise when viewed from
+  above. If not, flip that module's `turnMotorInverted` (and re-check the turn encoder sign).
+
+Repeat for all four modules. Do not run all four until each module is correct.
+
+## 4. Check odometry
+
+- Put the robot on the floor in a clear area.
+- Teleop: push forward. `Drive/Pose` x must increase; y must stay near zero.
+- Rotate in place counter-clockwise. `Drive/Pose` heading must increase.
+- If x decreases when driving forward, the drive motors are inverted.
+- If the heading decreases when rotating counter-clockwise, the Pigeon yaw is reversed or the
+  Pigeon is mounted upside down.
+
+## 5. Tune
+
+- Drive gains: start with `driveKp = 0.5`, `driveKs = 0.1`, `driveKv` as computed. Increase `driveKp`
+  if the robot lags; lower it if it oscillates.
+- Turn gains: start with `turnKp = 0.25`. Increase if modules are sluggish; lower if they oscillate.
+- Re-measure the wheel diameter and update `wheelRadiusMeters` if the odometry drifts over a long
+  push.
+
+## 6. Before a match
+
+- Confirm the battery is secure and the PDH breaker is on.
+- Confirm the radio and roboRIO are connected.
+- Confirm the driver controller is on port 0.
+- Press Back to zero the heading after placing the robot.
+- Press Start only when the modules are free to rotate; it re-seeds the turn encoders.

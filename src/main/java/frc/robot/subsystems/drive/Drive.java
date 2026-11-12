@@ -167,7 +167,8 @@ public class Drive extends SubsystemBase {
   public void setPose(Pose2d pose) {
     gyroIO.setYaw(pose.getRotation());
     rawGyroRotation = pose.getRotation();
-    poseEstimator.resetPosition(rawGyroRotation, getModulePositions(), pose);
+    lastModulePositions = getModulePositions();
+    poseEstimator.resetPosition(rawGyroRotation, lastModulePositions, pose);
   }
 
   /** Resets the current heading to zero, keeping the current translation. */

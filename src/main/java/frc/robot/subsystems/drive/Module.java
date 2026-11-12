@@ -23,6 +23,7 @@ public class Module {
   private final Alert turnDisconnectedAlert;
   private final Alert turnEncoderAlert;
   private final Alert absoluteEncoderAlert;
+  private final Alert turnReseedAlert;
 
   public Module(ModuleIO io, int index) {
     this.io = io;
@@ -35,6 +36,8 @@ public class Module {
         new Alert("Turn encoder not seeded on module " + index + ".", AlertType.kError);
     absoluteEncoderAlert =
         new Alert("Absolute encoder invalid on module " + index + ".", AlertType.kWarning);
+    turnReseedAlert =
+        new Alert("Turn encoder repeatedly re-seeding on module " + index + ".", AlertType.kError);
   }
 
   public void periodic() {
@@ -44,6 +47,7 @@ public class Module {
     turnDisconnectedAlert.set(!inputs.turnConnected);
     turnEncoderAlert.set(!inputs.turnEncoderSeeded);
     absoluteEncoderAlert.set(!inputs.turnAbsoluteEncoderValid);
+    turnReseedAlert.set(inputs.turnReseedCount > 3);
   }
 
   /** Runs the module at the requested state. The state is optimized and cosine-scaled. */

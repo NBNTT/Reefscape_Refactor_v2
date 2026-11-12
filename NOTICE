@@ -1,0 +1,12 @@
+# NOTICE
+
+This project is a drivetrain-only refactor of team 8567's Reefscape robot code.
+
+The drivetrain IO structure, AdvantageKit integration, and several utility classes are adapted
+from the AdvantageKit Spark Swerve template by FRC 6328 (Mechanical Advantage), licensed under
+the GNU General Public License v3. See `LICENSE`.
+
+The 2024/2025 robot constants and the original swerve draft came from
+https://github.com/ultraviolet8567/Reefscape.
+
+WPILib is licensed under the BSD 3-Clause license; see `WPILib-License.md`.

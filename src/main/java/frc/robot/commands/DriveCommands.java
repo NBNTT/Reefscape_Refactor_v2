@@ -91,6 +91,7 @@ public final class DriveCommands {
               xSlew.reset();
               ySlew.reset();
               omegaSlew.reset();
+              lock.reset();
             })
         .withName("Joystick Drive")
         .finallyDo(drive::stop);

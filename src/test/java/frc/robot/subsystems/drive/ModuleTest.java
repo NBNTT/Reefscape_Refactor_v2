@@ -57,7 +57,7 @@ class ModuleTest {
 
     io.connected = false;
     io.seeded = false;
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 3; i++) {
       module.periodic();
     }
 

@@ -129,7 +129,7 @@ class DriveTest {
       drive.periodic();
     }
     fl.healthy = false;
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 3; i++) {
       drive.periodic();
     }
     assertTrue(drive.isModuleFailed(0));
@@ -162,6 +162,37 @@ class DriveTest {
         VecBuilder.fill(0.1, 0.1, 0.1));
 
     assertEquals(1.0, drive.getPose().getX(), 1e-9);
+  }
+
+  @Test
+  void xLockTurnsModulesToCross() {
+    DriverStationSim.setEnabled(true);
+    DriverStationSim.notifyNewData();
+
+    Drive drive = newSimDrive();
+    drive.stopWithX();
+    for (int i = 0; i < 100; i++) {
+      drive.periodic();
+    }
+
+    double[] expectedDegrees = {45.0, -45.0, 135.0, -135.0};
+    for (int i = 0; i < 4; i++) {
+      assertEquals(
+          Math.IEEEremainder(expectedDegrees[i], 180.0),
+          Math.IEEEremainder(drive.getModuleStates()[i].angle.getDegrees(), 180.0),
+          8.0,
+          "module " + i + " should be at its X angle");
+    }
+
+    double startX = drive.getPose().getX();
+    drive.runVelocity(new ChassisSpeeds(1.0, 0.0, 0.0));
+    for (int i = 0; i < 50; i++) {
+      drive.periodic();
+    }
+    assertTrue(drive.getPose().getX() > startX + 0.1, "drive should recover after X-lock");
+
+    DriverStationSim.setEnabled(false);
+    DriverStationSim.notifyNewData();
   }
 
   @Test

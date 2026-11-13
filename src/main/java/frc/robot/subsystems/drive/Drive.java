@@ -134,6 +134,12 @@ public class Drive extends SubsystemBase {
 
     ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
     SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
+    for (int i = 0; i < 4; i++) {
+      if (modules[i].isFailed()) {
+        // A coasting failed module must not desaturate the healthy modules.
+        setpointStates[i] = new SwerveModuleState(0.0, setpointStates[i].angle);
+      }
+    }
     SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, maxSpeedMetersPerSec);
 
     Logger.recordOutput("SwerveChassisSpeeds/Setpoints", discreteSpeeds);
@@ -152,6 +158,20 @@ public class Drive extends SubsystemBase {
   public void stop() {
     for (Module module : modules) {
       module.stop();
+    }
+  }
+
+  /** Turns the healthy modules into an X to resist pushing. */
+  public void stopWithX() {
+    Rotation2d[] headings = new Rotation2d[4];
+    for (int i = 0; i < 4; i++) {
+      headings[i] = moduleTranslations[i].getAngle();
+    }
+    kinematics.resetHeadings(headings);
+    for (int i = 0; i < 4; i++) {
+      if (!modules[i].isFailed()) {
+        modules[i].runSetpoint(new SwerveModuleState(0.0, headings[i]));
+      }
     }
   }
 

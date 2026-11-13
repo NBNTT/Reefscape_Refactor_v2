@@ -26,6 +26,12 @@ public final class DriveConstants {
 
   public static final double maxAngularSpeedRadPerSec = 3.0 * Math.PI;
 
+  // Smooth start, quick stop. Full speed is unchanged; only the ramp differs.
+  public static final double maxLinearAccelMetersPerSec2 = 8.0;
+  public static final double maxLinearDecelMetersPerSec2 = 12.0;
+  public static final double maxAngularAccelRadPerSec2 = 16.0;
+  public static final double maxAngularDecelRadPerSec2 = 24.0;
+
   public static final double trackWidth = Units.inchesToMeters(20.5);
   public static final double wheelBase = Units.inchesToMeters(20.5);
 

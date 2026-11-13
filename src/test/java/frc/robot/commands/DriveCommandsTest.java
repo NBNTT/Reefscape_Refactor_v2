@@ -31,4 +31,13 @@ class DriveCommandsTest {
     assertEquals(1.0, lock.apply(1.0, Rotation2d.fromDegrees(20.0), 9.42, 0), 1e-9);
     assertEquals(0.0, lock.apply(0.0, Rotation2d.fromDegrees(20.0), 9.42, 1), 1e-9);
   }
+
+  @Test
+  void fastStopSlewAcceleratesSmoothlyAndStopsQuickly() {
+    DriveCommands.FastStopSlew slew = new DriveCommands.FastStopSlew();
+    slew.reset();
+    assertEquals(0.04, slew.calculate(1.0, 0.0, 2.0, 10.0), 1e-9);
+    assertEquals(0.24, slew.calculate(1.0, 0.1, 2.0, 10.0), 1e-9);
+    assertEquals(0.0, slew.calculate(0.0, 0.2, 2.0, 10.0), 1e-9);
+  }
 }

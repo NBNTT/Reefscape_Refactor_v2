@@ -47,14 +47,17 @@ Only these inputs do anything. Every other button is unbound.
 
 | Input | Action |
 | --- | --- |
-| Left stick | Field-relative translation (forward is away from your alliance wall after Back) |
+| Left stick | Field- or robot-oriented translation |
 | Right stick X | Rotation |
 | Right bumper (hold) | Slow mode (30%) |
+| Y | Toggle field-oriented / robot-oriented drive |
+| A (hold) | X-lock wheels |
 | Back | Zero heading for the current alliance (keep position) |
 
-The sticks use a deadband and cubic response. Heading hold is always on: with the rotation stick
-centered it holds the last heading while you strafe, and rotation input always wins. A/B/X/Y,
-Start, the d-pad, and the triggers are unbound.
+The sticks use a deadband and cubic response. A short asymmetric slew limiter smooths starts while
+keeping stops quick and leaving full speed unchanged. Heading hold is always on: with the rotation
+stick centered it holds the last heading, even at zero translation, and rotation input always wins.
+B/X, Start, the d-pad, and the triggers are unbound.
 
 ## Before the first drive: commissioning checklist
 
@@ -112,11 +115,14 @@ tighter standard deviations.
 ## Failure handling
 
 Each module watches its drive connection, turn connection, and turn-encoder seed. If any of those
-is bad for six loops, the module:
+is bad for three loops, the module:
 
 - sets both Spark MAXes to coast so the wheel can be dragged,
 - freezes its last valid position/state, so its encoders are ignored by odometry,
 - keeps the other three modules driving and steering.
+
+Telemetry-only read failures do not count as module failures. A failed module's setpoint is zeroed
+before wheel-speed desaturation, so it does not limit the healthy modules.
 
 When all three signals return, it re-brakes, re-seeds the turn encoder, and resumes normal odometry.
 `Drive/ModulesFailed` and the per-module alerts show the current state.

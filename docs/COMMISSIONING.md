@@ -22,7 +22,8 @@ For each module, turn the wheel by hand and watch
 - Point the wheel forward. `turnAbsolutePositionRad` should be near 0 after the offset in
   `DriveConstants` is correct. If it is not, adjust that module's `absoluteEncoderOffsetRad` by the
   error and rebuild.
-- `Drive/ModuleN/turnEncoderSeeded` must become true. If it does not, rotate the wheel slightly\r\n  off the 0 V point; it re-seeds automatically, otherwise check the analog wiring.
+- `Drive/ModuleN/turnEncoderSeeded` must become true. If it does not, rotate the wheel slightly
+  off the 0 V point; it re-seeds automatically, otherwise check the analog wiring.
 - Compare `turnPosition` (Spark MAX relative encoder) with `turnAbsolutePositionRad` over a full
   revolution. They must move in the same direction and agree within about 0.5 rad. If they do not,
   fix the inversion/offset before driving.
@@ -65,6 +66,8 @@ encoder), stop and fix it before continuing. A module with a bad turn encoder wi
 - Turn gains: start with `turnKp = 0.25`. Increase if modules are sluggish; lower if they oscillate.
 - Heading hold: strafe with the left stick and no rotation; the heading must hold. Move the right
   stick; the hold must yield to driver rotation and then hold the new heading.
+- Y: toggle field-oriented and robot-oriented. Forward must follow the robot in robot-oriented mode.
+- A: hold X-lock; all four wheels should turn to an X and resist pushing.
 - Re-measure the wheel diameter and update `wheelRadiusMeters` if the odometry drifts over a long
   push.
 

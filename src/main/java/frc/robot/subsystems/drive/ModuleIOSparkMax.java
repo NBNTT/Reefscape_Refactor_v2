@@ -120,22 +120,28 @@ public class ModuleIOSparkMax implements ModuleIO {
     sparkStickyFault = false;
     ifOk(driveSpark, driveEncoder::getPosition, value -> inputs.drivePositionMeters = value);
     ifOk(driveSpark, driveEncoder::getVelocity, value -> inputs.driveVelocityMetersPerSec = value);
+    boolean driveControlOk = !sparkStickyFault;
+
+    // Telemetry-only reads: a failure here must not fault the module.
     ifOk(
         driveSpark,
         new DoubleSupplier[] {driveSpark::getAppliedOutput, driveSpark::getBusVoltage},
         values -> inputs.driveAppliedVolts = values[0] * values[1]);
     ifOk(driveSpark, driveSpark::getOutputCurrent, value -> inputs.driveCurrentAmps = value);
-    inputs.driveConnected = driveConfigured && driveConnectedDebounce.calculate(!sparkStickyFault);
+    inputs.driveConnected = driveConfigured && driveConnectedDebounce.calculate(driveControlOk);
 
     sparkStickyFault = false;
     ifOk(turnSpark, turnEncoder::getPosition, value -> inputs.turnPosition = new Rotation2d(value));
+    boolean turnControlOk = !sparkStickyFault;
+
+    // Turn velocity, applied output, and current are telemetry only.
     ifOk(turnSpark, turnEncoder::getVelocity, value -> inputs.turnVelocityRadPerSec = value);
     ifOk(
         turnSpark,
         new DoubleSupplier[] {turnSpark::getAppliedOutput, turnSpark::getBusVoltage},
         values -> inputs.turnAppliedVolts = values[0] * values[1]);
     ifOk(turnSpark, turnSpark::getOutputCurrent, value -> inputs.turnCurrentAmps = value);
-    inputs.turnConnected = turnConfigured && turnConnectedDebounce.calculate(!sparkStickyFault);
+    inputs.turnConnected = turnConfigured && turnConnectedDebounce.calculate(turnControlOk);
 
     inputs.turnAbsoluteVoltage = absoluteEncoder.getAverageVoltage();
     inputs.turnAbsolutePositionRad = getAbsoluteAngle().getRadians();

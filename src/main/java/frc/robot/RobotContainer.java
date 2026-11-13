@@ -34,6 +34,7 @@ public class RobotContainer {
       new XboxDriverController(OperatorConstants.DRIVER_CONTROLLER_PORT);
   private final PowerDistribution pdh;
   private final SendableChooser<Command> autoChooser;
+  private boolean robotOriented = false;
 
   public RobotContainer() {
     drive =
@@ -69,7 +70,12 @@ public class RobotContainer {
 
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
-            drive, driver::forward, driver::strafe, driver::rotation, driver::slowMode));
+            drive,
+            driver::forward,
+            driver::strafe,
+            driver::rotation,
+            driver::slowMode,
+            () -> robotOriented));
 
     configureBindings();
     autoChooser = new SendableChooser<>();
@@ -79,9 +85,13 @@ public class RobotContainer {
     SmartDashboard.putData("Auto Chooser", autoChooser);
   }
 
-  /** Only Back is bound; Y, the right bumper, and the sticks are consumed by the drive command. */
+  /** Only A, Y, and Back are bound; the sticks and right bumper are read by the drive command. */
   private void configureBindings() {
     Trigger teleop = new Trigger(DriverStation::isTeleopEnabled);
+    teleop.and(new Trigger(driver::xLock)).whileTrue(DriveCommands.lockWheels(drive));
+    teleop
+        .and(new Trigger(driver::robotOrientedToggle))
+        .onTrue(Commands.runOnce(() -> robotOriented = !robotOriented));
     teleop
         .and(new Trigger(driver::zeroHeading))
         .onTrue(Commands.runOnce(drive::zeroHeading).withName("Zero Heading"));
@@ -92,6 +102,7 @@ public class RobotContainer {
   }
 
   public void periodic() {
+    Logger.recordOutput("Drive/RobotOriented", robotOriented);
     if (pdh != null) {
       Logger.recordOutput("Power/TotalCurrentAmps", pdh.getTotalCurrent());
       Logger.recordOutput("Power/Voltage", pdh.getVoltage());

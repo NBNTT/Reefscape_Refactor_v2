@@ -21,7 +21,7 @@ import org.littletonrobotics.junction.Logger;
  * steer and estimate pose. When the module is healthy again it re-brakes and re-seeds its encoder.
  */
 public class Module {
-  private static final int FAILURE_CYCLES = 6;
+  private static final int FAILURE_CYCLES = 3;
 
   private final ModuleIO io;
   private final ModuleIOInputsAutoLogged inputs = new ModuleIOInputsAutoLogged();

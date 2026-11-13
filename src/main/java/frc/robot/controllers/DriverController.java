@@ -16,5 +16,9 @@ public interface DriverController {
 
   boolean slowMode();
 
+  boolean robotOrientedToggle();
+
+  boolean xLock();
+
   boolean zeroHeading();
 }

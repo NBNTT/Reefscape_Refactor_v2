@@ -23,11 +23,13 @@ import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOSparkMax;
+import frc.robot.subsystems.vision.Vision;
 import org.littletonrobotics.junction.Logger;
 
 /** Wires the drivetrain, controller, autonomous chooser, and telemetry together. */
 public class RobotContainer {
   private final Drive drive;
+  private final Vision vision;
   private final DriverController driver =
       new XboxDriverController(OperatorConstants.DRIVER_CONTROLLER_PORT);
   private final PowerDistribution pdh;
@@ -59,6 +61,7 @@ public class RobotContainer {
                   new ModuleIO() {});
         };
 
+    vision = new Vision(drive);
     pdh =
         Constants.currentMode == Constants.Mode.REAL
             ? new PowerDistribution(Constants.CAN.PDH, ModuleType.kRev)
@@ -66,12 +69,7 @@ public class RobotContainer {
 
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
-            drive,
-            driver::forward,
-            driver::strafe,
-            driver::rotation,
-            driver::slowMode,
-            driver::cardinalLock));
+            drive, driver::forward, driver::strafe, driver::rotation, driver::slowMode));
 
     configureBindings();
     autoChooser = new SendableChooser<>();

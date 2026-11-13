@@ -8,6 +8,7 @@ package frc.robot.subsystems.drive;
 
 import static frc.robot.subsystems.drive.DriveConstants.*;
 
+import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -16,6 +17,8 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -36,6 +39,7 @@ public class Drive extends SubsystemBase {
   private final SwerveDriveKinematics kinematics = new SwerveDriveKinematics(moduleTranslations);
   private Rotation2d rawGyroRotation = Rotation2d.kZero;
   private boolean gyroWasConnected = false;
+  private int headingResetCounter = 0;
   private SwerveModulePosition[] lastModulePositions = {
     new SwerveModulePosition(),
     new SwerveModulePosition(),
@@ -199,6 +203,12 @@ public class Drive extends SubsystemBase {
     rawGyroRotation = pose.getRotation();
     lastModulePositions = getModulePositions();
     poseEstimator.resetPosition(rawGyroRotation, lastModulePositions, pose);
+    headingResetCounter++;
+  }
+
+  /** Increments whenever the heading is deliberately reset, so heading hold can re-capture. */
+  public int getHeadingResetCounter() {
+    return headingResetCounter;
   }
 
   /** Resets the current heading to the alliance-forward direction, keeping the translation. */
@@ -207,6 +217,23 @@ public class Drive extends SubsystemBase {
         new Pose2d(
             getPose().getTranslation(),
             AllianceFlipUtil.shouldFlip() ? Rotation2d.kPi : Rotation2d.kZero));
+  }
+
+  /** Adds a timestamped PhotonVision pose measurement, rejecting stale or non-finite data. */
+  public void addVisionMeasurement(
+      Pose2d visionPose, double timestampSeconds, Matrix<N3, N1> stdDevs) {
+    double now = Timer.getFPGATimestamp();
+    if (visionPose == null
+        || stdDevs == null
+        || !Double.isFinite(visionPose.getX())
+        || !Double.isFinite(visionPose.getY())
+        || !Double.isFinite(visionPose.getRotation().getRadians())
+        || !Double.isFinite(timestampSeconds)
+        || timestampSeconds > now + 0.1
+        || timestampSeconds < now - 2.0) {
+      return;
+    }
+    poseEstimator.addVisionMeasurement(visionPose, timestampSeconds, stdDevs);
   }
 
   public double getMaxLinearSpeedMetersPerSec() {

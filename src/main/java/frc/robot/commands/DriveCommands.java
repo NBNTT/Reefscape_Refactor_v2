@@ -4,6 +4,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.subsystems.drive.Drive;
@@ -16,18 +17,17 @@ public final class DriveCommands {
   private DriveCommands() {}
 
   /**
-   * Field-relative drive with deadband, cubic response, slow mode, and cardinal lock.
+   * Field-relative drive with deadband, cubic response, slow mode, and always-on heading hold.
    *
-   * <p>Cardinal lock holds the nearest 90-degree heading while the driver strafes. Rotation input
-   * always wins; when it stops, the lock holds the new heading.
+   * <p>When the rotation stick is centered, the lock holds the last heading while the robot
+   * strafes. Rotation input always wins; when it stops, the lock holds the new heading.
    */
   public static Command joystickDrive(
       Drive drive,
       DoubleSupplier x,
       DoubleSupplier y,
       DoubleSupplier omega,
-      BooleanSupplier slowMode,
-      BooleanSupplier cardinalLock) {
+      BooleanSupplier slowMode) {
     CardinalLock lock = new CardinalLock();
     return drive
         .run(
@@ -46,12 +46,15 @@ public final class DriveCommands {
                   cubic(applyDeadband(omega.getAsDouble(), OperatorConstants.DEADBAND))
                       * drive.getMaxAngularSpeedRadPerSec()
                       * multiplier;
+              if (DriverStation.isDisabled()) {
+                lock.reset();
+              }
               double omegaSpeed =
                   lock.apply(
-                      cardinalLock.getAsBoolean(),
                       omegaInput,
                       drive.getRotation(),
-                      drive.getMaxAngularSpeedRadPerSec() * multiplier);
+                      drive.getMaxAngularSpeedRadPerSec() * multiplier,
+                      drive.getHeadingResetCounter());
               drive.runVelocity(
                   ChassisSpeeds.fromFieldRelativeSpeeds(
                       xSpeed, ySpeed, omegaSpeed, drive.getRotation()));
@@ -70,32 +73,31 @@ public final class DriveCommands {
     return Math.copySign((Math.abs(value) - deadband) / (1.0 - deadband), value);
   }
 
-  static Rotation2d nearestCardinal(Rotation2d current) {
-    return Rotation2d.fromDegrees(Math.round(current.getDegrees() / 90.0) * 90.0);
-  }
-
   private static double cubic(double value) {
     return MathUtil.clamp(value * value * value, -1.0, 1.0);
   }
 
-  /** One lock per command instance; it keeps its target while the button is held. */
+  /** Holds the heading captured when the rotation stick was last centered. */
   static final class CardinalLock {
     private final PIDController pid =
         new PIDController(DriveConstants.cardinalKp, 0.0, DriveConstants.cardinalKd);
     private Rotation2d target;
+    private int lastResetCounter = -1;
 
     CardinalLock() {
       pid.enableContinuousInput(-Math.PI, Math.PI);
     }
 
-    double apply(boolean active, double omegaInput, Rotation2d current, double maxOmega) {
-      if (!active) {
-        target = null;
+    void reset() {
+      target = null;
+      pid.reset();
+    }
+
+    double apply(double omegaInput, Rotation2d current, double maxOmega, int resetCounter) {
+      if (target == null || resetCounter != lastResetCounter) {
+        lastResetCounter = resetCounter;
+        target = current;
         pid.reset();
-        return omegaInput;
-      }
-      if (target == null) {
-        target = nearestCardinal(current);
       }
       if (Math.abs(omegaInput) > 1e-3) {
         target = current;

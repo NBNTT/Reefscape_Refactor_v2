@@ -38,11 +38,6 @@ public class XboxDriverController implements DriverController {
   }
 
   @Override
-  public boolean cardinalLock() {
-    return connected() && controller.getYButton();
-  }
-
-  @Override
   public boolean zeroHeading() {
     return connected() && controller.getBackButton();
   }

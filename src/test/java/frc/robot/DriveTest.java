@@ -5,9 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import edu.wpi.first.hal.HAL;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
@@ -147,6 +149,19 @@ class DriveTest {
 
     DriverStationSim.setEnabled(false);
     DriverStationSim.notifyNewData();
+  }
+
+  @Test
+  void rejectsNonFiniteVisionMeasurement() {
+    Drive drive = newSimDrive();
+    drive.setPose(new Pose2d(1.0, 2.0, Rotation2d.kZero));
+
+    drive.addVisionMeasurement(
+        new Pose2d(Double.NaN, 2.0, Rotation2d.kZero),
+        Timer.getFPGATimestamp(),
+        VecBuilder.fill(0.1, 0.1, 0.1));
+
+    assertEquals(1.0, drive.getPose().getX(), 1e-9);
   }
 
   @Test

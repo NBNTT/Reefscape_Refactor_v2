@@ -16,7 +16,5 @@ public interface DriverController {
 
   boolean slowMode();
 
-  boolean cardinalLock();
-
   boolean zeroHeading();
 }

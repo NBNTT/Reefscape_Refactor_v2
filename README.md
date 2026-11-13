@@ -10,9 +10,8 @@ project keeps only what the 2024/2025 robot still has:
 - REV Power Distribution Hub
 - roboRIO and radio
 
-AdvantageKit logging is kept light so the same drivetrain can move to the next robot. Camera/vision
-code is intentionally not included: the stripped robot has no cameras, and it is one dependency to
-add when they are mounted.
+AdvantageKit logging is kept light so the same drivetrain can move to the next robot. PhotonVision
+is integrated with the drive pose estimator but disabled until cameras are mounted.
 
 ## Build and test
 
@@ -51,11 +50,11 @@ Only these inputs do anything. Every other button is unbound.
 | Left stick | Field-relative translation (forward is away from your alliance wall after Back) |
 | Right stick X | Rotation |
 | Right bumper (hold) | Slow mode (30%) |
-| Y (hold) | Cardinal lock: snaps to the nearest 90 degrees and holds it while strafing |
 | Back | Zero heading for the current alliance (keep position) |
 
-The sticks use a deadband and cubic response. Cardinal lock only corrects drift while the right
-stick is centered; rotation input always wins, then the lock holds the new heading.
+The sticks use a deadband and cubic response. Heading hold is always on: with the rotation stick
+centered it holds the last heading while you strafe, and rotation input always wins. A/B/X/Y,
+Start, the d-pad, and the triggers are unbound.
 
 ## Before the first drive: commissioning checklist
 
@@ -91,9 +90,24 @@ Every value below is in `DriveConstants` or `Constants.CAN`.
 
 ## What was removed
 
-Elevator, coral intake, algae intake, climber, lights, reef alignment commands, PhotonVision, and
-the old `Odometry`/`Swerve`/`SwerveModule` classes. The old `dev` branch remains the reference for
-the superstructure; this project is the clean drivetrain base for the next robot.
+Elevator, coral intake, algae intake, climber, lights, reef alignment commands, and the old
+`Odometry`/`Swerve`/`SwerveModule` classes. The old `dev` branch remains the reference for the
+superstructure; this project is the clean drivetrain base for the next robot.
+
+## Vision
+
+`Vision` reads PhotonVision camera results and feeds `Drive.addVisionMeasurement`, so camera poses
+go through the same `SwerveDrivePoseEstimator` as odometry. It is a no-op while
+`VisionConstants.ENABLED` is false, `CAMERAS` is empty, or the code is not running on the real
+robot. When cameras are mounted:
+
+1. Set `VisionConstants.ENABLED = true`.
+2. Update `FIELD_LAYOUT` to next season's field.
+3. Fill `CAMERAS` with measured camera names and `robotToCamera` transforms.
+
+Vision measurements are rejected if they are non-finite, more than 0.1 s in the future, or more
+than 2 s old. Single-tag measurements get high rotation uncertainty; multi-tag measurements get
+tighter standard deviations.
 
 ## Failure handling
 
@@ -114,8 +128,8 @@ When all three signals return, it re-brakes, re-seeds the turn encoder, and resu
 implementation (TalonFX + CANcoder); `Module`, `Drive`, kinematics, logging, and controls stay
 unchanged. `GyroIO` does the same for the Pigeon.
 
-Runtime dependencies are WPILib, AdvantageKit, Phoenix 6 (Pigeon), and REVLib (Spark MAX). JUnit is
-test-only. There is no PathPlanner, PhotonLib, or other unused vendor library.
+Runtime dependencies are WPILib, AdvantageKit, Phoenix 6 (Pigeon), REVLib (Spark MAX), and
+PhotonLib (vision). JUnit is test-only. There is no PathPlanner or other unused vendor library.
 
 ## Development environment on this machine
 

@@ -63,8 +63,8 @@ encoder), stop and fix it before continuing. A module with a bad turn encoder wi
 - Drive gains: start with `driveKp = 0.5`, `driveKs = 0.1`, `driveKv` as computed. Increase `driveKp`
   if the robot lags; lower it if it oscillates.
 - Turn gains: start with `turnKp = 0.25`. Increase if modules are sluggish; lower if they oscillate.
-- Cardinal lock: hold Y, strafe with the left stick, and confirm the heading holds. Move the right
-  stick; the lock must yield to driver rotation and then hold the new heading.
+- Heading hold: strafe with the left stick and no rotation; the heading must hold. Move the right
+  stick; the hold must yield to driver rotation and then hold the new heading.
 - Re-measure the wheel diameter and update `wheelRadiusMeters` if the odometry drifts over a long
   push.
 

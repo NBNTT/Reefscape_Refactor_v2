@@ -177,7 +177,14 @@ class DriveTest {
     Drive drive = newSimDrive();
     Command command =
         DriveCommands.joystickDrive(
-            drive, () -> 1.0, () -> 0.0, () -> 0.0, () -> false, () -> false);
+            drive,
+            () -> 1.0,
+            () -> 0.0,
+            () -> 0.0,
+            () -> 0.0,
+            () -> 0.0,
+            () -> false,
+            () -> DriveCommands.DriveMode.FIELD);
     command.initialize();
     for (int i = 0; i < 50; i++) {
       command.execute();
@@ -185,6 +192,39 @@ class DriveTest {
     }
 
     assertTrue(drive.getPose().getX() > 0.1, "joystick command should move forward");
+    command.end(false);
+
+    DriverStationSim.setEnabled(false);
+    DriverStationSim.notifyNewData();
+  }
+
+  @Test
+  void cardinalCommandTurnsToStickAngle() {
+    DriverStationSim.setEnabled(true);
+    DriverStationSim.notifyNewData();
+
+    Drive drive = newSimDrive();
+    Command command =
+        DriveCommands.joystickDrive(
+            drive,
+            () -> 0.0,
+            () -> 0.0,
+            () -> 0.0,
+            () -> 0.0,
+            () -> 1.0,
+            () -> false,
+            () -> DriveCommands.DriveMode.CARDINAL);
+    command.initialize();
+    for (int i = 0; i < 100; i++) {
+      command.execute();
+      drive.periodic();
+    }
+
+    assertEquals(
+        -90.0,
+        drive.getRotation().getDegrees(),
+        10.0,
+        "right stick should face the robot to the driver's right");
     command.end(false);
 
     DriverStationSim.setEnabled(false);

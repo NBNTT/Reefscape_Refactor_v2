@@ -67,6 +67,9 @@ encoder), stop and fix it before continuing. A module with a bad turn encoder wi
 - Heading hold: strafe with the left stick and no rotation; the heading must hold. Move the right
   stick; the hold must yield to driver rotation and then hold the new heading.
 - D-pad up: field-oriented drive, the default.
+- D-pad right: cardinal field-oriented drive. Right stick up faces forward, right faces driver's
+  right, down faces backward; partial deflection turns slower; sweeping around the edge spins the
+  robot that way.
 - D-pad down: robot-oriented drive. Forward must follow the robot.
 - A: hold X-lock; all four wheels should turn to an X and resist pushing.
 - Re-measure the wheel diameter and update `wheelRadiusMeters` if the odometry drifts over a long

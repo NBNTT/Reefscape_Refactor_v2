@@ -12,14 +12,25 @@ import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.DriveConstants;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 /** Driver-facing drivetrain commands. */
 public final class DriveCommands {
   private DriveCommands() {}
 
+  /** Translation frame and right-stick behavior. */
+  public enum DriveMode {
+    FIELD,
+    ROBOT,
+    CARDINAL
+  }
+
   /**
    * Field- or robot-oriented drive with deadband, cubic response, smooth start, quick stop, slow
    * mode, and always-on heading hold.
+   *
+   * <p>Cardinal mode stays field-oriented. The right-stick angle selects the heading and its
+   * deflection scales the rotation speed, always taking the shortest path.
    *
    * <p>When the rotation stick is centered, the lock holds the last heading even at zero
    * translation. Rotation input always wins; when it stops, the lock holds the new heading.
@@ -29,8 +40,10 @@ public final class DriveCommands {
       DoubleSupplier x,
       DoubleSupplier y,
       DoubleSupplier omega,
+      DoubleSupplier rotationForward,
+      DoubleSupplier rotationRight,
       BooleanSupplier slowMode,
-      BooleanSupplier robotOriented) {
+      Supplier<DriveMode> mode) {
     CardinalLock lock = new CardinalLock();
     FastStopSlew xSlew = new FastStopSlew();
     FastStopSlew ySlew = new FastStopSlew();
@@ -73,15 +86,42 @@ public final class DriveCommands {
                       DriveConstants.maxAngularAccelRadPerSec2,
                       DriveConstants.maxAngularDecelRadPerSec2);
 
-              double omegaSpeed =
-                  lock.apply(
-                      omegaInput,
-                      drive.getRotation(),
-                      drive.getMaxAngularSpeedRadPerSec() * multiplier,
-                      drive.getHeadingResetCounter());
+              double omegaSpeed;
+              DriveMode driveMode = mode.get();
+              if (driveMode == DriveMode.CARDINAL) {
+                double forward = rotationForward.getAsDouble();
+                double right = rotationRight.getAsDouble();
+                double magnitude =
+                    cubic(
+                        Math.min(
+                            1.0,
+                            applyDeadband(Math.hypot(forward, right), OperatorConstants.DEADBAND)));
+                if (magnitude > 0.0) {
+                  omegaSpeed =
+                      lock.driveTo(
+                          cardinalHeading(forward, right),
+                          drive.getRotation(),
+                          drive.getMaxAngularSpeedRadPerSec() * multiplier * magnitude,
+                          drive.getHeadingResetCounter());
+                } else {
+                  omegaSpeed =
+                      lock.apply(
+                          0.0,
+                          drive.getRotation(),
+                          drive.getMaxAngularSpeedRadPerSec() * multiplier,
+                          drive.getHeadingResetCounter());
+                }
+              } else {
+                omegaSpeed =
+                    lock.apply(
+                        omegaInput,
+                        drive.getRotation(),
+                        drive.getMaxAngularSpeedRadPerSec() * multiplier,
+                        drive.getHeadingResetCounter());
+              }
 
               drive.runVelocity(
-                  robotOriented.getAsBoolean()
+                  driveMode == DriveMode.ROBOT
                       ? new ChassisSpeeds(xSpeed, ySpeed, omegaSpeed)
                       : ChassisSpeeds.fromFieldRelativeSpeeds(
                           xSpeed, ySpeed, omegaSpeed, drive.getRotation()));
@@ -114,6 +154,11 @@ public final class DriveCommands {
 
   private static double cubic(double value) {
     return value * value * value;
+  }
+
+  /** Right-stick angle as a field-relative heading: up is forward, right is clockwise. */
+  static Rotation2d cardinalHeading(double forward, double right) {
+    return new Rotation2d(Math.atan2(-right, forward));
   }
 
   /** Asymmetric rate limiter: slow accel, fast decel, exact target at full speed. */
@@ -165,6 +210,17 @@ public final class DriveCommands {
       }
       return MathUtil.clamp(
           pid.calculate(current.getRadians(), target.getRadians()), -maxOmega, maxOmega);
+    }
+
+    /** Turns to the requested heading by the shortest path, capped at the given speed. */
+    double driveTo(Rotation2d heading, Rotation2d current, double maxOmega, int resetCounter) {
+      if (resetCounter != lastResetCounter) {
+        lastResetCounter = resetCounter;
+        pid.reset();
+      }
+      target = heading;
+      return MathUtil.clamp(
+          pid.calculate(current.getRadians(), heading.getRadians()), -maxOmega, maxOmega);
     }
   }
 }

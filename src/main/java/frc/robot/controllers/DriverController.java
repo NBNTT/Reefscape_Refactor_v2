@@ -14,11 +14,19 @@ public interface DriverController {
   /** Counter-clockwise positive. */
   double rotation();
 
+  /** Right stick up, positive. */
+  double rotationForward();
+
+  /** Right stick right, positive. */
+  double rotationRight();
+
   boolean slowMode();
 
   boolean fieldOriented();
 
   boolean robotOriented();
+
+  boolean cardinalDriving();
 
   boolean xLock();
 

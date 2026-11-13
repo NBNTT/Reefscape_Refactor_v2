@@ -40,4 +40,23 @@ class DriveCommandsTest {
     assertEquals(0.24, slew.calculate(1.0, 0.1, 2.0, 10.0), 1e-9);
     assertEquals(0.0, slew.calculate(0.0, 0.2, 2.0, 10.0), 1e-9);
   }
+
+  @Test
+  void cardinalHeadingFollowsStickAngle() {
+    assertEquals(0.0, DriveCommands.cardinalHeading(1.0, 0.0).getRadians(), 1e-9);
+    assertEquals(-Math.PI / 2, DriveCommands.cardinalHeading(0.0, 1.0).getRadians(), 1e-9);
+    assertEquals(Math.PI / 2, DriveCommands.cardinalHeading(0.0, -1.0).getRadians(), 1e-9);
+    assertEquals(Math.PI, Math.abs(DriveCommands.cardinalHeading(-1.0, 0.0).getRadians()), 1e-9);
+  }
+
+  @Test
+  void cardinalDriveTakesShortestPath() {
+    DriveCommands.CardinalLock lock = new DriveCommands.CardinalLock();
+    assertTrue(
+        lock.driveTo(Rotation2d.fromDegrees(-90.0), Rotation2d.fromDegrees(0.0), 9.42, 0) < 0.0,
+        "right stick should turn clockwise");
+    assertTrue(
+        lock.driveTo(Rotation2d.fromDegrees(-170.0), Rotation2d.fromDegrees(170.0), 9.42, 0) > 0.0,
+        "shortest path from 170 to -170 is counter-clockwise");
+  }
 }

@@ -49,8 +49,10 @@ Only these inputs do anything. Every other button is unbound.
 | --- | --- |
 | Left stick | Field- or robot-oriented translation |
 | Right stick X | Rotation |
+| Right stick (cardinal mode) | Angle selects heading; deflection sets speed |
 | Right bumper (hold) | Slow mode (30%) |
 | D-pad up | Field-oriented drive (default) |
+| D-pad right | Cardinal field-oriented drive |
 | D-pad down | Robot-oriented drive |
 | A (hold) | X-lock wheels |
 | Back | Set the current direction as forward |
@@ -59,8 +61,12 @@ The sticks use a deadband and cubic response. A short asymmetric slew limiter sm
 keeping stops quick and leaving full speed unchanged. Heading hold is always on: with the rotation
 stick centered it holds the last heading, even at zero translation, and rotation input always wins.
 Field-oriented drive is the default. Point the robot where the driver wants "forward", press Back,
-and that direction stays forward for the match regardless of alliance. Y, B, X, Start, and the
-triggers are unbound.
+and that direction stays forward for the match regardless of alliance.
+
+Cardinal mode keeps field-oriented translation. The right-stick angle is the target heading: up is
+forward, right is the driver's right, down is backward, always turning the shortest way. Deflection
+scales rotation speed through the same cubic response, so a light push turns slowly. Sweeping the
+stick around its edge spins the robot that way. Y, B, X, Start, and the triggers are unbound.
 
 ## Before the first drive: commissioning checklist
 

@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.Autos;
 import frc.robot.commands.DriveCommands;
+import frc.robot.commands.DriveCommands.DriveMode;
 import frc.robot.controllers.DriverController;
 import frc.robot.controllers.XboxDriverController;
 import frc.robot.subsystems.drive.Drive;
@@ -34,7 +35,7 @@ public class RobotContainer {
       new XboxDriverController(OperatorConstants.DRIVER_CONTROLLER_PORT);
   private final PowerDistribution pdh;
   private final SendableChooser<Command> autoChooser;
-  private boolean robotOriented = false;
+  private DriveMode driveMode = DriveMode.FIELD;
 
   public RobotContainer() {
     drive =
@@ -74,8 +75,10 @@ public class RobotContainer {
             driver::forward,
             driver::strafe,
             driver::rotation,
+            driver::rotationForward,
+            driver::rotationRight,
             driver::slowMode,
-            () -> robotOriented));
+            () -> driveMode));
 
     configureBindings();
     autoChooser = new SendableChooser<>();
@@ -93,10 +96,13 @@ public class RobotContainer {
     teleop.and(new Trigger(driver::xLock)).whileTrue(DriveCommands.lockWheels(drive));
     teleop
         .and(new Trigger(driver::fieldOriented))
-        .onTrue(Commands.runOnce(() -> robotOriented = false));
+        .onTrue(Commands.runOnce(() -> driveMode = DriveMode.FIELD));
     teleop
         .and(new Trigger(driver::robotOriented))
-        .onTrue(Commands.runOnce(() -> robotOriented = true));
+        .onTrue(Commands.runOnce(() -> driveMode = DriveMode.ROBOT));
+    teleop
+        .and(new Trigger(driver::cardinalDriving))
+        .onTrue(Commands.runOnce(() -> driveMode = DriveMode.CARDINAL));
     teleop
         .and(new Trigger(driver::zeroHeading))
         .onTrue(Commands.runOnce(drive::zeroHeading).withName("Set Forward"));
@@ -107,7 +113,7 @@ public class RobotContainer {
   }
 
   public void periodic() {
-    Logger.recordOutput("Drive/RobotOriented", robotOriented);
+    Logger.recordOutput("Drive/DriveMode", driveMode.toString());
     if (pdh != null) {
       Logger.recordOutput("Power/TotalCurrentAmps", pdh.getTotalCurrent());
       Logger.recordOutput("Power/Voltage", pdh.getVoltage());

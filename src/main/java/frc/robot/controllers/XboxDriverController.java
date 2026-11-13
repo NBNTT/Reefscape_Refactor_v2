@@ -33,6 +33,16 @@ public class XboxDriverController implements DriverController {
   }
 
   @Override
+  public double rotationForward() {
+    return connected() ? -controller.getRightY() : 0.0;
+  }
+
+  @Override
+  public double rotationRight() {
+    return connected() ? controller.getRightX() : 0.0;
+  }
+
+  @Override
   public boolean slowMode() {
     return connected() && controller.getRightBumperButton();
   }
@@ -45,6 +55,11 @@ public class XboxDriverController implements DriverController {
   @Override
   public boolean robotOriented() {
     return connected() && controller.getPOV() == 180;
+  }
+
+  @Override
+  public boolean cardinalDriving() {
+    return connected() && controller.getPOV() == 90;
   }
 
   @Override

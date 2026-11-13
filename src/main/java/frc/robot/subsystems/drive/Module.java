@@ -84,7 +84,7 @@ public class Module {
       }
     }
 
-    if (!failed) {
+    if (isReady()) {
       lastPosition = new SwerveModulePosition(inputs.drivePositionMeters, inputs.turnPosition);
       lastState = new SwerveModuleState(inputs.driveVelocityMetersPerSec, inputs.turnPosition);
     }

@@ -36,8 +36,9 @@ class ModuleTest {
     }
 
     @Override
-    public void setCoast(boolean coast) {
+    public boolean setCoast(boolean coast) {
       this.coast = coast;
+      return true;
     }
 
     @Override
@@ -57,7 +58,9 @@ class ModuleTest {
 
     io.connected = false;
     io.seeded = false;
-    for (int i = 0; i < 3; i++) {
+    module.periodic();
+    assertEquals(1.0, module.getPosition().distanceMeters, 1e-9, "not-ready encoder is ignored");
+    for (int i = 0; i < 2; i++) {
       module.periodic();
     }
 

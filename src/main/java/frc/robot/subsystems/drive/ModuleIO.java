@@ -50,5 +50,7 @@ public interface ModuleIO {
   public default void resetTurnEncoder() {}
 
   /** Coast both motors so a failed module can be dragged without fighting the drivetrain. */
-  public default void setCoast(boolean coast) {}
+  public default boolean setCoast(boolean coast) {
+    return true;
+  }
 }

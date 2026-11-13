@@ -113,7 +113,7 @@ public final class DriveCommands {
   }
 
   private static double cubic(double value) {
-    return MathUtil.clamp(value * value * value, -1.0, 1.0);
+    return value * value * value;
   }
 
   /** Asymmetric rate limiter: slow accel, fast decel, exact target at full speed. */

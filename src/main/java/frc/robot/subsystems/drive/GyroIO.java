@@ -20,9 +20,6 @@ public interface GyroIO {
 
   public default void updateInputs(GyroIOInputs inputs) {}
 
-  /** Sets the current robot heading to zero. */
-  public default void resetYaw() {}
-
   /** Sets the current robot heading to the requested value. */
   public default void setYaw(Rotation2d yaw) {}
 }

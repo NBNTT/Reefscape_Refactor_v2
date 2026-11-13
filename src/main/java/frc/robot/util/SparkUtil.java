@@ -8,7 +8,6 @@ package frc.robot.util;
 
 import com.revrobotics.REVLibError;
 import com.revrobotics.spark.SparkBase;
-import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
@@ -28,20 +27,6 @@ public final class SparkUtil {
     } else {
       sparkStickyFault = true;
     }
-  }
-
-  /** Processes a group of values from a Spark only if every read was valid. */
-  public static void ifOk(
-      SparkBase spark, DoubleSupplier[] suppliers, Consumer<double[]> consumer) {
-    double[] values = new double[suppliers.length];
-    for (int i = 0; i < suppliers.length; i++) {
-      values[i] = suppliers[i].getAsDouble();
-      if (spark.getLastError() != REVLibError.kOk) {
-        sparkStickyFault = true;
-        return;
-      }
-    }
-    consumer.accept(values);
   }
 
   /** Retries a configuration command until it succeeds or the attempt limit is reached. */

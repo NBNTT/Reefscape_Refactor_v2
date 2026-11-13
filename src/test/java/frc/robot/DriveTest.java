@@ -11,6 +11,8 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
+import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.commands.DriveCommands;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
 import frc.robot.subsystems.drive.GyroIO.GyroIOInputs;
@@ -87,8 +89,9 @@ class DriveTest {
     }
 
     @Override
-    public void setCoast(boolean coast) {
+    public boolean setCoast(boolean coast) {
       this.coast = coast;
+      return true;
     }
   }
 
@@ -98,6 +101,7 @@ class DriveTest {
     DriverStationSim.notifyNewData();
 
     Drive drive = newSimDrive();
+    drive.periodic();
     drive.runVelocity(new ChassisSpeeds(1.0, 0.0, 0.0));
     for (int i = 0; i < 50; i++) {
       drive.periodic();
@@ -152,16 +156,39 @@ class DriveTest {
   }
 
   @Test
-  void rejectsNonFiniteVisionMeasurement() {
+  void rejectsInvalidVisionMeasurements() {
     Drive drive = newSimDrive();
     drive.setPose(new Pose2d(1.0, 2.0, Rotation2d.kZero));
 
+    double now = Timer.getFPGATimestamp();
     drive.addVisionMeasurement(
-        new Pose2d(Double.NaN, 2.0, Rotation2d.kZero),
-        Timer.getFPGATimestamp(),
-        VecBuilder.fill(0.1, 0.1, 0.1));
+        new Pose2d(Double.NaN, 2.0, Rotation2d.kZero), now, VecBuilder.fill(0.1, 0.1, 0.1));
+    drive.addVisionMeasurement(
+        new Pose2d(100.0, 2.0, Rotation2d.kZero), now, VecBuilder.fill(0.1, 0.1, 0.1));
 
     assertEquals(1.0, drive.getPose().getX(), 1e-9);
+  }
+
+  @Test
+  void joystickCommandDrivesForward() {
+    DriverStationSim.setEnabled(true);
+    DriverStationSim.notifyNewData();
+
+    Drive drive = newSimDrive();
+    Command command =
+        DriveCommands.joystickDrive(
+            drive, () -> 1.0, () -> 0.0, () -> 0.0, () -> false, () -> false);
+    command.initialize();
+    for (int i = 0; i < 50; i++) {
+      command.execute();
+      drive.periodic();
+    }
+
+    assertTrue(drive.getPose().getX() > 0.1, "joystick command should move forward");
+    command.end(false);
+
+    DriverStationSim.setEnabled(false);
+    DriverStationSim.notifyNewData();
   }
 
   @Test
@@ -170,6 +197,7 @@ class DriveTest {
     DriverStationSim.notifyNewData();
 
     Drive drive = newSimDrive();
+    drive.periodic();
     drive.stopWithX();
     for (int i = 0; i < 100; i++) {
       drive.periodic();

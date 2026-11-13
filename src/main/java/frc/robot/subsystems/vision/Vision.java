@@ -29,7 +29,7 @@ public class Vision extends SubsystemBase {
 
   public Vision(Drive drive) {
     this.drive = drive;
-    if (!VisionConstants.ENABLED || Constants.currentMode != Constants.Mode.REAL) {
+    if (VisionConstants.CAMERAS.length == 0 || Constants.currentMode != Constants.Mode.REAL) {
       return;
     }
 

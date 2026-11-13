@@ -51,7 +51,7 @@ public final class Constants {
   }
 
   public static final class FieldConstants {
-    // 2025 Reefscape field. Used only by AllianceFlipUtil.
+    // 2025 Reefscape field. Used by vision bounds.
     public static final double FIELD_LENGTH_METERS = 16.54;
     public static final double FIELD_WIDTH_METERS = 8.07;
   }

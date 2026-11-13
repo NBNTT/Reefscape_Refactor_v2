@@ -26,7 +26,7 @@ The CI workflow runs `./gradlew build` on Ubuntu.
 - `Module` detects failures, coasts both motors, freezes its odometry contribution, and recovers
   automatically.
 - `Vision` feeds PhotonVision poses into `Drive.addVisionMeasurement`; it is disabled until
-  `VisionConstants.ENABLED` is true and cameras are configured.
+  `VisionConstants.CAMERAS` is configured.
 - AdvantageScope keys are standard: `SwerveStates/*`, `SwerveChassisSpeeds/*`, `Odometry/Robot`.
 
 ## Constraints

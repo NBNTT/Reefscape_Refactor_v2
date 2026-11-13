@@ -14,7 +14,9 @@ class DriveConstantsTest {
     assertEquals(4, DriveConstants.moduleTranslations.length);
     assertEquals(halfTrack, DriveConstants.moduleTranslations[0].getX(), 1e-9);
     assertEquals(halfTrack, DriveConstants.moduleTranslations[0].getY(), 1e-9);
+    assertEquals(halfTrack, DriveConstants.moduleTranslations[1].getX(), 1e-9);
     assertEquals(-halfTrack, DriveConstants.moduleTranslations[1].getY(), 1e-9);
+    assertEquals(-halfTrack, DriveConstants.moduleTranslations[2].getX(), 1e-9);
     assertEquals(halfTrack, DriveConstants.moduleTranslations[2].getY(), 1e-9);
     assertEquals(-halfTrack, DriveConstants.moduleTranslations[3].getX(), 1e-9);
     assertEquals(-halfTrack, DriveConstants.moduleTranslations[3].getY(), 1e-9);

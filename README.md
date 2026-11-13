@@ -100,17 +100,14 @@ superstructure; this project is the clean drivetrain base for the next robot.
 ## Vision
 
 `Vision` reads PhotonVision camera results and feeds `Drive.addVisionMeasurement`, so camera poses
-go through the same `SwerveDrivePoseEstimator` as odometry. It is a no-op while
-`VisionConstants.ENABLED` is false, `CAMERAS` is empty, or the code is not running on the real
-robot. When cameras are mounted:
+go through the same `SwerveDrivePoseEstimator` as odometry. It is a no-op while `CAMERAS` is empty or the code is not running on the real robot. When cameras are mounted:
 
-1. Set `VisionConstants.ENABLED = true`.
-2. Update `FIELD_LAYOUT` to next season's field.
-3. Fill `CAMERAS` with measured camera names and `robotToCamera` transforms.
+1. Update `FIELD_LAYOUT` and `Constants.FieldConstants` to next season's field.
+2. Fill `CAMERAS` with measured camera names and `robotToCamera` transforms.
 
-Vision measurements are rejected if they are non-finite, more than 0.1 s in the future, or more
-than 2 s old. Single-tag measurements get high rotation uncertainty; multi-tag measurements get
-tighter standard deviations.
+Vision measurements are rejected if they are non-finite, outside the field, more than 0.1 s in the
+future, or more than 2 s old. Single-tag measurements get high rotation uncertainty; multi-tag
+measurements get tighter standard deviations.
 
 ## Failure handling
 
@@ -118,7 +115,7 @@ Each module watches its drive connection, turn connection, and turn-encoder seed
 is bad for three loops, the module:
 
 - sets both Spark MAXes to coast so the wheel can be dragged,
-- freezes its last valid position/state, so its encoders are ignored by odometry,
+- freezes its last valid position and reports zero speed, so its encoders are ignored by odometry,
 - keeps the other three modules driving and steering.
 
 Telemetry-only read failures do not count as module failures. A failed module's setpoint is zeroed

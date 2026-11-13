@@ -22,10 +22,10 @@ import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
-import frc.robot.util.AllianceFlipUtil;
 import org.littletonrobotics.junction.Logger;
 
 /** Four-module swerve drivetrain with odometry, failure compensation, and AdvantageKit logging. */
@@ -98,7 +98,7 @@ public class Drive extends SubsystemBase {
       rawGyroRotation = gyroInputs.yawPosition;
       poseEstimator.resetPosition(
           rawGyroRotation,
-          getModulePositions(),
+          modulePositions,
           new Pose2d(getPose().getTranslation(), rawGyroRotation));
     }
     gyroWasConnected = gyroInputs.connected;
@@ -135,8 +135,8 @@ public class Drive extends SubsystemBase {
     ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
     SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
     for (int i = 0; i < 4; i++) {
-      if (modules[i].isFailed()) {
-        // A coasting failed module must not desaturate the healthy modules.
+      if (!modules[i].isReady()) {
+        // A not-ready module must not desaturate the healthy modules.
         setpointStates[i] = new SwerveModuleState(0.0, setpointStates[i].angle);
       }
     }
@@ -145,10 +145,10 @@ public class Drive extends SubsystemBase {
     Logger.recordOutput("SwerveChassisSpeeds/Setpoints", discreteSpeeds);
 
     for (int i = 0; i < 4; i++) {
-      if (modules[i].isFailed()) {
-        modules[i].stop();
-      } else {
+      if (modules[i].isReady()) {
         modules[i].runSetpoint(setpointStates[i]);
+      } else {
+        modules[i].stop();
       }
     }
 
@@ -169,7 +169,9 @@ public class Drive extends SubsystemBase {
     }
     kinematics.resetHeadings(headings);
     for (int i = 0; i < 4; i++) {
-      if (!modules[i].isFailed()) {
+      if (!modules[i].isReady()) {
+        modules[i].stop();
+      } else {
         modules[i].runSetpoint(new SwerveModuleState(0.0, headings[i]));
       }
     }
@@ -236,7 +238,9 @@ public class Drive extends SubsystemBase {
     setPose(
         new Pose2d(
             getPose().getTranslation(),
-            AllianceFlipUtil.shouldFlip() ? Rotation2d.kPi : Rotation2d.kZero));
+            DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
+                ? Rotation2d.kPi
+                : Rotation2d.kZero));
   }
 
   /** Adds a timestamped PhotonVision pose measurement, rejecting stale or non-finite data. */
@@ -248,6 +252,10 @@ public class Drive extends SubsystemBase {
         || !Double.isFinite(visionPose.getX())
         || !Double.isFinite(visionPose.getY())
         || !Double.isFinite(visionPose.getRotation().getRadians())
+        || visionPose.getX() < -1.0
+        || visionPose.getX() > Constants.FieldConstants.FIELD_LENGTH_METERS + 1.0
+        || visionPose.getY() < -1.0
+        || visionPose.getY() > Constants.FieldConstants.FIELD_WIDTH_METERS + 1.0
         || !Double.isFinite(timestampSeconds)
         || timestampSeconds > now + 0.1
         || timestampSeconds < now - 2.0) {

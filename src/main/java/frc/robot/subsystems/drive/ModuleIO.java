@@ -48,4 +48,7 @@ public interface ModuleIO {
 
   /** Re-seeds the turn motor's relative encoder from the absolute encoder. */
   public default void resetTurnEncoder() {}
+
+  /** Coast both motors so a failed module can be dragged without fighting the drivetrain. */
+  public default void setCoast(boolean coast) {}
 }

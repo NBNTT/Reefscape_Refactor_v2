@@ -8,68 +8,57 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.Autos;
 import frc.robot.commands.DriveCommands;
+import frc.robot.controllers.DriverController;
+import frc.robot.controllers.XboxDriverController;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
 import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
-import frc.robot.subsystems.drive.ModuleIOSpark;
-import frc.robot.subsystems.vision.Vision;
+import frc.robot.subsystems.drive.ModuleIOSparkMax;
 import org.littletonrobotics.junction.Logger;
 
 /** Wires the drivetrain, controller, autonomous chooser, and telemetry together. */
 public class RobotContainer {
   private final Drive drive;
-  private final Vision vision;
+  private final DriverController driver =
+      new XboxDriverController(OperatorConstants.DRIVER_CONTROLLER_PORT);
   private final PowerDistribution pdh;
-  private final CommandXboxController driver =
-      new CommandXboxController(OperatorConstants.DRIVER_CONTROLLER_PORT);
   private final SendableChooser<Command> autoChooser;
 
   public RobotContainer() {
-    switch (Constants.currentMode) {
-      case REAL ->
-          drive =
+    drive =
+        switch (Constants.currentMode) {
+          case REAL ->
               new Drive(
                   new GyroIOPigeon2(),
-                  new ModuleIOSpark(0),
-                  new ModuleIOSpark(1),
-                  new ModuleIOSpark(2),
-                  new ModuleIOSpark(3));
-      case SIM ->
-          drive =
+                  new ModuleIOSparkMax(0),
+                  new ModuleIOSparkMax(1),
+                  new ModuleIOSparkMax(2),
+                  new ModuleIOSparkMax(3));
+          case SIM ->
               new Drive(
                   new GyroIO() {},
                   new ModuleIOSim(),
                   new ModuleIOSim(),
                   new ModuleIOSim(),
                   new ModuleIOSim());
-      case REPLAY ->
-          drive =
+          case REPLAY ->
               new Drive(
                   new GyroIO() {},
                   new ModuleIO() {},
                   new ModuleIO() {},
                   new ModuleIO() {},
                   new ModuleIO() {});
-      default ->
-          drive =
-              new Drive(
-                  new GyroIO() {},
-                  new ModuleIO() {},
-                  new ModuleIO() {},
-                  new ModuleIO() {},
-                  new ModuleIO() {});
-    }
+        };
 
-    vision = new Vision(drive);
     pdh =
         Constants.currentMode == Constants.Mode.REAL
             ? new PowerDistribution(Constants.CAN.PDH, ModuleType.kRev)
@@ -78,27 +67,26 @@ public class RobotContainer {
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
-            () -> -driver.getLeftY(),
-            () -> -driver.getLeftX(),
-            () -> -driver.getRightX(),
-            () ->
-                DriverStation.isJoystickConnected(OperatorConstants.DRIVER_CONTROLLER_PORT)
-                    && driver.rightBumper().getAsBoolean()));
+            driver::forward,
+            driver::strafe,
+            driver::rotation,
+            driver::slowMode,
+            driver::cardinalLock));
 
     configureBindings();
     autoChooser = new SendableChooser<>();
     autoChooser.setDefaultOption("None", Commands.none());
     autoChooser.addOption("Drive Forward", Autos.driveForward(drive, 2.0, 1.5));
     autoChooser.addOption("Leave", Autos.leave(drive));
+    SmartDashboard.putData("Auto Chooser", autoChooser);
   }
 
+  /** Only Back is bound; Y, the right bumper, and the sticks are consumed by the drive command. */
   private void configureBindings() {
     Trigger teleop = new Trigger(DriverStation::isTeleopEnabled);
-    teleop.and(driver.a()).whileTrue(DriveCommands.lockWheels(drive));
-    teleop.and(driver.back()).onTrue(Commands.runOnce(drive::zeroHeading).withName("Zero Heading"));
     teleop
-        .and(driver.start())
-        .onTrue(Commands.runOnce(drive::resetTurnEncoders).withName("Reset Turn Encoders"));
+        .and(new Trigger(driver::zeroHeading))
+        .onTrue(Commands.runOnce(drive::zeroHeading).withName("Zero Heading"));
   }
 
   public Command getAutonomousCommand() {

@@ -35,7 +35,7 @@ import java.util.function.DoubleSupplier;
  * from the analog absolute encoder once at startup (and again on request), so belt slip or a
  * swapped module can be corrected without rewiring.
  */
-public class ModuleIOSpark implements ModuleIO {
+public class ModuleIOSparkMax implements ModuleIO {
   private final ModuleHardware config;
 
   private final SparkMax driveSpark;
@@ -55,7 +55,7 @@ public class ModuleIOSpark implements ModuleIO {
   private int turnDriftCounter = 0;
   private int turnReseedCount = 0;
 
-  public ModuleIOSpark(int module) {
+  public ModuleIOSparkMax(int module) {
     config = modules[module];
 
     driveSpark = new SparkMax(config.driveId(), MotorType.kBrushless);
@@ -83,12 +83,11 @@ public class ModuleIOSpark implements ModuleIO {
         .pid(driveKp, 0.0, driveKd);
     driveConfigured =
         tryUntilOk(
-            driveSpark,
             5,
             () ->
                 driveSpark.configure(
                     driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
-    driveConfigured &= tryUntilOk(driveSpark, 5, () -> driveEncoder.setPosition(0.0));
+    driveConfigured &= tryUntilOk(5, () -> driveEncoder.setPosition(0.0));
 
     SparkMaxConfig turnConfig = new SparkMaxConfig();
     turnConfig
@@ -108,7 +107,6 @@ public class ModuleIOSpark implements ModuleIO {
         .pid(turnKp, 0.0, turnKd);
     turnConfigured =
         tryUntilOk(
-            turnSpark,
             5,
             () ->
                 turnSpark.configure(
@@ -200,6 +198,22 @@ public class ModuleIOSpark implements ModuleIO {
   }
 
   @Override
+  public void setCoast(boolean coast) {
+    SparkMaxConfig config = new SparkMaxConfig();
+    config.idleMode(coast ? IdleMode.kCoast : IdleMode.kBrake);
+    tryUntilOk(
+        5,
+        () ->
+            driveSpark.configure(
+                config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters));
+    tryUntilOk(
+        5,
+        () ->
+            turnSpark.configure(
+                config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters));
+  }
+
+  @Override
   public void resetTurnEncoder() {
     resetTurnEncoderInternal();
   }
@@ -208,8 +222,7 @@ public class ModuleIOSpark implements ModuleIO {
     if (!turnConfigured || !absoluteEncoderValid()) {
       return false;
     }
-    boolean ok =
-        tryUntilOk(turnSpark, 5, () -> turnEncoder.setPosition(getAbsoluteAngle().getRadians()));
+    boolean ok = tryUntilOk(5, () -> turnEncoder.setPosition(getAbsoluteAngle().getRadians()));
     if (ok) {
       turnSeeded = true;
     }

@@ -28,7 +28,6 @@ public final class DriveConstants {
 
   public static final double trackWidth = Units.inchesToMeters(20.5);
   public static final double wheelBase = Units.inchesToMeters(20.5);
-  public static final double driveBaseRadius = Math.hypot(trackWidth / 2.0, wheelBase / 2.0);
 
   // Order is FL, FR, BL, BR everywhere in this package.
   public static final Translation2d[] moduleTranslations = {
@@ -65,6 +64,10 @@ public final class DriveConstants {
 
   public static final double turnKp = 0.25;
   public static final double turnKd = 0.0;
+
+  // Cardinal lock PID (rad/s per rad). Only corrects drift; driver rotation always wins.
+  public static final double cardinalKp = 3.0;
+  public static final double cardinalKd = 0.2;
 
   // Simulation gains only; they do not affect the real robot.
   public static final double driveSimKp = 1.0;

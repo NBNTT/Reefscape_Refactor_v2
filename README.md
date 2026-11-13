@@ -10,8 +10,9 @@ project keeps only what the 2024/2025 robot still has:
 - REV Power Distribution Hub
 - roboRIO and radio
 
-Logging (AdvantageKit) and optional PhotonVision pose estimation are kept so the same drivetrain
-can be moved onto the next robot.
+AdvantageKit logging is kept light so the same drivetrain can move to the next robot. Camera/vision
+code is intentionally not included: the stripped robot has no cameras, and it is one dependency to
+add when they are mounted.
 
 ## Build and test
 
@@ -36,19 +37,25 @@ The simulation uses `ModuleIOSim`, so you can drive it with a controller or run 
 (select "Drive Forward" in the dashboard chooser) without any hardware. Set
 `wpi.sim.addGui().defaultEnabled = true` in `build.gradle` if you want the Sim GUI window.
 
-Logs are written to the USB drive (`/U/logs`) on the robot and to `logs/` on the desktop. Replay
-them with AdvantageScope, or set `Constants.simMode = Mode.REPLAY` and run `simulateJava`.
+Logs are written to the USB drive (`/U/logs`) on the robot and to `logs/` on the desktop. Open the
+`.wpilog` directly in AdvantageScope. The swerve tab uses the standard keys
+`SwerveStates/Measured`, `SwerveStates/Setpoints`, `SwerveChassisSpeeds/Measured`, and
+`Odometry/Robot`; module inputs are under `Drive/Module0` through `Drive/Module3`.
 
 ## Controls
+
+Only these inputs do anything. Every other button is unbound.
 
 | Input | Action |
 | --- | --- |
 | Left stick | Field-relative translation (forward is away from your alliance wall after Back) |
 | Right stick X | Rotation |
 | Right bumper (hold) | Slow mode (30%) |
-| A (hold) | X-lock wheels |
+| Y (hold) | Cardinal lock: snaps to the nearest 90 degrees and holds it while strafing |
 | Back | Zero heading for the current alliance (keep position) |
-| Start | Re-seed turn encoders from the analog absolute encoders |
+
+The sticks use a deadband and cubic response. Cardinal lock only corrects drift while the right
+stick is centered; rotation input always wins, then the lock holds the new heading.
 
 ## Before the first drive: commissioning checklist
 
@@ -70,10 +77,11 @@ Every value below is in `DriveConstants` or `Constants.CAN`.
       wrong way, flip that module's `driveMotorInverted` or `turnMotorInverted`.
 - [ ] Turn encoder: turn each wheel by hand. `Drive/ModuleN/turnPosition` and
       `turnAbsolutePositionRad` must both increase together and agree within about 0.5 rad. If they
-      diverge, check `turnMotorInverted`/`absoluteEncoderReversed` and press Start to re-seed.
+      diverge, check `turnMotorInverted`/`absoluteEncoderReversed`; the module re-seeds automatically
+      when the absolute encoder is valid.
 - [ ] Alerts: `turnEncoderSeeded` and `turnAbsoluteEncoderValid` must both be true on all four
-      modules before driving. A turn module with an unseeded encoder will not steer. The drivetrain
-      refuses setpoints until all four modules report connected drive/turn and a seeded turn encoder.
+      modules before driving. A module that loses a motor or encoder coasts both motors, freezes its
+      last valid odometry position, and re-joins automatically when the connection returns.
 - [ ] Pigeon 2 orientation: the robot must be flat and still at startup. The Pigeon x-axis must
       point forward; verify the heading increases when the robot turns counter-clockwise.
 - [ ] Drive gains: `driveKp`, `driveKs`, and `driveKv` are starting values. Tune them, or run a
@@ -83,17 +91,31 @@ Every value below is in `DriveConstants` or `Constants.CAN`.
 
 ## What was removed
 
-Elevator, coral intake, algae intake, climber, lights, reef alignment commands, and the old
-`Odometry`/`Swerve`/`SwerveModule` classes. The old `dev` branch remains the reference for the
-superstructure; this project is the clean drivetrain base for the next robot.
+Elevator, coral intake, algae intake, climber, lights, reef alignment commands, PhotonVision, and
+the old `Odometry`/`Swerve`/`SwerveModule` classes. The old `dev` branch remains the reference for
+the superstructure; this project is the clean drivetrain base for the next robot.
 
-## Vision
+## Failure handling
 
-Vision is disabled by default because the stripped robot has no cameras. Set
-`VisionConstants.enabled = true` and update the camera names and `robotToCamera` transforms when
-cameras are mounted. The existing transforms are from the old superstructure and must be
-re-measured. Vision runs on the real robot only; the simulator has no camera model. PhotonLib is
-pinned to a 2025 release candidate; switch to a stable 2025 build before enabling vision.
+Each module watches its drive connection, turn connection, and turn-encoder seed. If any of those
+is bad for six loops, the module:
+
+- sets both Spark MAXes to coast so the wheel can be dragged,
+- freezes its last valid position/state, so its encoders are ignored by odometry,
+- keeps the other three modules driving and steering.
+
+When all three signals return, it re-brakes, re-seeds the turn encoder, and resumes normal odometry.
+`Drive/ModulesFailed` and the per-module alerts show the current state.
+
+## Hardware abstraction
+
+`ModuleIO` is the hardware seam. `ModuleIOSparkMax` implements the current REV MK4n hardware and
+`ModuleIOSim` implements the physics model. A CTRE MK5n drivetrain only needs a new `ModuleIO`
+implementation (TalonFX + CANcoder); `Module`, `Drive`, kinematics, logging, and controls stay
+unchanged. `GyroIO` does the same for the Pigeon.
+
+Runtime dependencies are WPILib, AdvantageKit, Phoenix 6 (Pigeon), and REVLib (Spark MAX). JUnit is
+test-only. There is no PathPlanner, PhotonLib, or other unused vendor library.
 
 ## Development environment on this machine
 

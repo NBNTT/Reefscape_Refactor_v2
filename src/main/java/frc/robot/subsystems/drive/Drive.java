@@ -8,7 +8,6 @@ package frc.robot.subsystems.drive;
 
 import static frc.robot.subsystems.drive.DriveConstants.*;
 
-import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -17,8 +16,6 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.math.numbers.N1;
-import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -28,7 +25,7 @@ import frc.robot.Constants;
 import frc.robot.util.AllianceFlipUtil;
 import org.littletonrobotics.junction.Logger;
 
-/** Four-module swerve drivetrain with odometry and AdvantageKit logging. */
+/** Four-module swerve drivetrain with odometry, failure compensation, and AdvantageKit logging. */
 public class Drive extends SubsystemBase {
   private final GyroIO gyroIO;
   private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
@@ -39,7 +36,6 @@ public class Drive extends SubsystemBase {
   private final SwerveDriveKinematics kinematics = new SwerveDriveKinematics(moduleTranslations);
   private Rotation2d rawGyroRotation = Rotation2d.kZero;
   private boolean gyroWasConnected = false;
-  private boolean modulesReady = true;
   private SwerveModulePosition[] lastModulePositions = {
     new SwerveModulePosition(),
     new SwerveModulePosition(),
@@ -71,18 +67,18 @@ public class Drive extends SubsystemBase {
       module.periodic();
     }
 
-    modulesReady = true;
-    for (Module module : modules) {
-      modulesReady &= module.isReady();
-    }
-
-    if (DriverStation.isDisabled() || !modulesReady) {
+    if (DriverStation.isDisabled()) {
       for (Module module : modules) {
         module.stop();
       }
     }
 
     SwerveModulePosition[] modulePositions = getModulePositions();
+    for (int i = 0; i < 4; i++) {
+      if (modules[i].consumeOdometryReset()) {
+        lastModulePositions[i] = modulePositions[i];
+      }
+    }
     SwerveModulePosition[] moduleDeltas = new SwerveModulePosition[4];
     for (int i = 0; i < 4; i++) {
       moduleDeltas[i] =
@@ -112,15 +108,17 @@ public class Drive extends SubsystemBase {
 
     poseEstimator.updateWithTime(Timer.getFPGATimestamp(), rawGyroRotation, modulePositions);
 
-    Logger.recordOutput("Drive/Pose", getPose());
-    Logger.recordOutput("Drive/ChassisSpeeds", getChassisSpeeds());
-    Logger.recordOutput("Drive/ModuleStates", getModuleStates());
+    Logger.recordOutput("Odometry/Robot", getPose());
+    Logger.recordOutput("SwerveChassisSpeeds/Measured", getChassisSpeeds());
+    Logger.recordOutput("SwerveStates/Measured", getModuleStates());
+    Logger.recordOutput("Drive/ModulesFailed", failedModuleCount());
     gyroDisconnectedAlert.set(!gyroInputs.connected && Constants.currentMode != Constants.Mode.SIM);
   }
 
-  /** Runs the drivetrain at the requested robot-relative velocity. */
+  /** Runs the drivetrain at the requested robot-relative velocity. Failed modules are skipped. */
   public void runVelocity(ChassisSpeeds speeds) {
-    if (!modulesReady) {
+    if (DriverStation.isDisabled()) {
+      stop();
       return;
     }
     if (!Double.isFinite(speeds.vxMetersPerSecond)
@@ -129,38 +127,43 @@ public class Drive extends SubsystemBase {
       stop();
       return;
     }
+
     ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
     SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
     SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, maxSpeedMetersPerSec);
 
-    Logger.recordOutput("Drive/Setpoints", setpointStates);
-    Logger.recordOutput("Drive/SetpointSpeeds", discreteSpeeds);
+    Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
+    Logger.recordOutput("SwerveChassisSpeeds/Setpoints", discreteSpeeds);
 
     for (int i = 0; i < 4; i++) {
-      modules[i].runSetpoint(setpointStates[i]);
+      if (modules[i].isFailed()) {
+        modules[i].stop();
+      } else {
+        modules[i].runSetpoint(setpointStates[i]);
+      }
     }
 
-    Logger.recordOutput("Drive/SetpointsOptimized", setpointStates);
+    Logger.recordOutput("SwerveStates/SetpointsOptimized", setpointStates);
   }
 
   public void stop() {
-    runVelocity(new ChassisSpeeds());
-  }
-
-  /** Turns the modules into an X to resist pushing. */
-  public void stopWithX() {
-    Rotation2d[] headings = new Rotation2d[4];
-    for (int i = 0; i < 4; i++) {
-      headings[i] = moduleTranslations[i].getAngle();
-    }
-    kinematics.resetHeadings(headings);
-    stop();
-  }
-
-  public void resetTurnEncoders() {
     for (Module module : modules) {
-      module.resetTurnEncoder();
+      module.stop();
     }
+  }
+
+  public boolean isModuleFailed(int index) {
+    return modules[index].isFailed();
+  }
+
+  private int failedModuleCount() {
+    int count = 0;
+    for (Module module : modules) {
+      if (module.isFailed()) {
+        count++;
+      }
+    }
+    return count;
   }
 
   public SwerveModuleState[] getModuleStates() {
@@ -205,24 +208,6 @@ public class Drive extends SubsystemBase {
         new Pose2d(
             getPose().getTranslation(),
             AllianceFlipUtil.shouldFlip() ? Rotation2d.kPi : Rotation2d.kZero));
-  }
-
-  public void addVisionMeasurement(
-      Pose2d visionRobotPoseMeters,
-      double timestampSeconds,
-      Matrix<N3, N1> visionMeasurementStdDevs) {
-    double now = Timer.getFPGATimestamp();
-    if (visionRobotPoseMeters == null
-        || !Double.isFinite(visionRobotPoseMeters.getX())
-        || !Double.isFinite(visionRobotPoseMeters.getY())
-        || !Double.isFinite(visionRobotPoseMeters.getRotation().getRadians())
-        || !Double.isFinite(timestampSeconds)
-        || timestampSeconds > now + 0.1
-        || timestampSeconds < now - 2.0) {
-      return;
-    }
-    poseEstimator.addVisionMeasurement(
-        visionRobotPoseMeters, timestampSeconds, visionMeasurementStdDevs);
   }
 
   public double getMaxLinearSpeedMetersPerSec() {

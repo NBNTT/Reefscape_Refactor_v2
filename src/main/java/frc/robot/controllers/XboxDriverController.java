@@ -38,8 +38,13 @@ public class XboxDriverController implements DriverController {
   }
 
   @Override
-  public boolean robotOrientedToggle() {
-    return connected() && controller.getYButton();
+  public boolean fieldOriented() {
+    return connected() && controller.getPOV() == 0;
+  }
+
+  @Override
+  public boolean robotOriented() {
+    return connected() && controller.getPOV() == 180;
   }
 
   @Override

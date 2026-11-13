@@ -22,7 +22,6 @@ import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
@@ -233,14 +232,9 @@ public class Drive extends SubsystemBase {
     return headingResetCounter;
   }
 
-  /** Resets the current heading to the alliance-forward direction, keeping the translation. */
+  /** Makes the robot's current direction forward for field-oriented drive. */
   public void zeroHeading() {
-    setPose(
-        new Pose2d(
-            getPose().getTranslation(),
-            DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
-                ? Rotation2d.kPi
-                : Rotation2d.kZero));
+    setPose(new Pose2d(getPose().getTranslation(), Rotation2d.kZero));
   }
 
   /** Adds a timestamped PhotonVision pose measurement, rejecting stale or non-finite data. */

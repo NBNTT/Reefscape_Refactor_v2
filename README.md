@@ -50,14 +50,17 @@ Only these inputs do anything. Every other button is unbound.
 | Left stick | Field- or robot-oriented translation |
 | Right stick X | Rotation |
 | Right bumper (hold) | Slow mode (30%) |
-| Y | Toggle field-oriented / robot-oriented drive |
+| D-pad up | Field-oriented drive (default) |
+| D-pad down | Robot-oriented drive |
 | A (hold) | X-lock wheels |
-| Back | Zero heading for the current alliance (keep position) |
+| Back | Set the current direction as forward |
 
 The sticks use a deadband and cubic response. A short asymmetric slew limiter smooths starts while
 keeping stops quick and leaving full speed unchanged. Heading hold is always on: with the rotation
 stick centered it holds the last heading, even at zero translation, and rotation input always wins.
-B/X, Start, the d-pad, and the triggers are unbound.
+Field-oriented drive is the default. Point the robot where the driver wants "forward", press Back,
+and that direction stays forward for the match regardless of alliance. Y, B, X, Start, and the
+triggers are unbound.
 
 ## Before the first drive: commissioning checklist
 

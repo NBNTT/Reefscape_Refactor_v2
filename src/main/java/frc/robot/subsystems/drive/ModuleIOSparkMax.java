@@ -111,10 +111,10 @@ public class ModuleIOSparkMax implements ModuleIO {
 
     sparkStickyFault = false;
     ifOk(driveSpark, driveEncoder::getPosition, value -> inputs.drivePositionMeters = value);
-    ifOk(driveSpark, driveEncoder::getVelocity, value -> inputs.driveVelocityMetersPerSec = value);
     boolean driveControlOk = !sparkStickyFault;
 
-    // Telemetry-only reads: a failure here must not fault the module.
+    // Velocity, applied output, and current are telemetry only.
+    ifOk(driveSpark, driveEncoder::getVelocity, value -> inputs.driveVelocityMetersPerSec = value);
     ifOk(
         driveSpark,
         driveSpark::getAppliedOutput,

@@ -66,7 +66,8 @@ encoder), stop and fix it before continuing. A module with a bad turn encoder wi
 - Turn gains: start with `turnKp = 0.25`. Increase if modules are sluggish; lower if they oscillate.
 - Heading hold: strafe with the left stick and no rotation; the heading must hold. Move the right
   stick; the hold must yield to driver rotation and then hold the new heading.
-- Y: toggle field-oriented and robot-oriented. Forward must follow the robot in robot-oriented mode.
+- D-pad up: field-oriented drive, the default.
+- D-pad down: robot-oriented drive. Forward must follow the robot.
 - A: hold X-lock; all four wheels should turn to an X and resist pushing.
 - Re-measure the wheel diameter and update `wheelRadiusMeters` if the odometry drifts over a long
   push.
@@ -76,5 +77,6 @@ encoder), stop and fix it before continuing. A module with a bad turn encoder wi
 - Confirm the battery is secure and the PDH breaker is on.
 - Confirm the radio and roboRIO are connected.
 - Confirm the driver controller is on port 0.
-- Press Back after placing the robot to set the alliance-forward heading.
+- Press Back while the robot faces the driver's forward direction; that direction stays forward for
+  the match.
 

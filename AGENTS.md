@@ -34,7 +34,8 @@ The CI workflow runs `./gradlew build` on Ubuntu.
 - Keep the project buildable with WPILib 2025.3.2. Do not add PathPlanner 2025: those Maven
   artifacts are no longer published.
 - Drivetrain hardware values live in `DriveConstants`; CAN IDs live in `Constants.CAN`.
-- Only left/right sticks, right bumper, Y, A, and Back are bound. Do not add other button bindings.
+- Only left/right sticks, right bumper, D-pad up/down, A, and Back are bound. Do not add other
+  button bindings.
 - No superstructure or unused vendor libraries.
 - PhotonVision stays disabled until cameras and measured transforms are available.
 - Tests must not require a roboRIO. Use `ModuleIOSim` and `GyroIO` no-op implementations.

@@ -1,8 +1,8 @@
 package frc.robot.controllers;
 
 /**
- * Driver input abstraction. The drivetrain only needs these six signals, so replacing an 8BitDo
- * Ultimate (XInput) with another controller is a one-file change.
+ * Driver input abstraction. The drivetrain only needs these inputs, so replacing an 8BitDo Ultimate
+ * (XInput) with another controller is a one-file change.
  */
 public interface DriverController {
   /** Forward positive. */
@@ -16,7 +16,9 @@ public interface DriverController {
 
   boolean slowMode();
 
-  boolean robotOrientedToggle();
+  boolean fieldOriented();
+
+  boolean robotOriented();
 
   boolean xLock();
 

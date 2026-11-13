@@ -60,7 +60,16 @@ class ModuleTest {
     io.seeded = false;
     module.periodic();
     assertEquals(1.0, module.getPosition().distanceMeters, 1e-9, "not-ready encoder is ignored");
-    for (int i = 0; i < 2; i++) {
+    assertFalse(module.isFailed(), "one bad cycle must not fault");
+
+    io.connected = true;
+    io.seeded = true;
+    module.periodic();
+    assertFalse(module.isFailed(), "recovery from one bad cycle must not fault");
+
+    io.connected = false;
+    io.seeded = false;
+    for (int i = 0; i < 3; i++) {
       module.periodic();
     }
 

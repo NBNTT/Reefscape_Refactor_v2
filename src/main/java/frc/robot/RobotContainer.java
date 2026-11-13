@@ -85,16 +85,21 @@ public class RobotContainer {
     SmartDashboard.putData("Auto Chooser", autoChooser);
   }
 
-  /** Only A, Y, and Back are bound; the sticks and right bumper are read by the drive command. */
+  /**
+   * Only D-pad, A, and Back are bound; the sticks and right bumper are read by the drive command.
+   */
   private void configureBindings() {
     Trigger teleop = new Trigger(DriverStation::isTeleopEnabled);
     teleop.and(new Trigger(driver::xLock)).whileTrue(DriveCommands.lockWheels(drive));
     teleop
-        .and(new Trigger(driver::robotOrientedToggle))
-        .onTrue(Commands.runOnce(() -> robotOriented = !robotOriented));
+        .and(new Trigger(driver::fieldOriented))
+        .onTrue(Commands.runOnce(() -> robotOriented = false));
+    teleop
+        .and(new Trigger(driver::robotOriented))
+        .onTrue(Commands.runOnce(() -> robotOriented = true));
     teleop
         .and(new Trigger(driver::zeroHeading))
-        .onTrue(Commands.runOnce(drive::zeroHeading).withName("Zero Heading"));
+        .onTrue(Commands.runOnce(drive::zeroHeading).withName("Set Forward"));
   }
 
   public Command getAutonomousCommand() {
